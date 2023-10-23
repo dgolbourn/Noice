@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Noice</string>
+    <string name="content_description_media">content description</string>
+    <string name="slider_desc">volume</string>
 </resources>
