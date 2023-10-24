@@ -7,39 +7,328 @@
     android:layout_height="match_parent"
     tools:context=".ui.main.MainFragment">
 
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:checkable="true">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_height="0dp"
+            android:layout_weight="0.25"
+            android:orientation="horizontal">
 
-            <!-- Media -->
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="194dp"
-                app:srcCompat="@drawable/ic_launcher_foreground"
-                android:scaleType="centerCrop"
-                android:contentDescription="@string/content_description_media"
-                />
-            <com.google.android.material.slider.Slider
-                android:id="@+id/slider"
-                android:layout_width="match_parent"
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_1"
+                app:checkedIcon="@drawable/baseline_volume_off_24"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:contentDescription="@string/slider_desc"
-                android:value="20.0"
-                android:valueFrom="0.0"
-                android:valueTo="100.0" />
+                android:layout_margin="8dp"
+                android:layout_weight="0.5"
+                android:checkable="true"
+                android:clickable="true"
+                android:focusable="true">
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/content_description_media"
+                        android:scaleType="centerCrop"
+                        app:srcCompat="@drawable/ic_launcher_foreground" />
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/slider_desc"
+                        android:value="20.0"
+                        android:valueFrom="0.0"
+                        android:valueTo="100.0" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_2"
+                app:checkedIcon="@drawable/baseline_volume_off_24"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_weight="0.5"
+                android:checkable="true"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/content_description_media"
+                        android:scaleType="centerCrop"
+                        app:srcCompat="@drawable/ic_launcher_foreground" />
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/slider_desc"
+                        android:value="20.0"
+                        android:valueFrom="0.0"
+                        android:valueTo="100.0" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.25"
+            android:orientation="horizontal">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_3"
+                app:checkedIcon="@drawable/baseline_volume_off_24"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_weight="0.5"
+                android:checkable="true"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/content_description_media"
+                        android:scaleType="centerCrop"
+                        app:srcCompat="@drawable/ic_launcher_foreground" />
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_3"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/slider_desc"
+                        android:value="20.0"
+                        android:valueFrom="0.0"
+                        android:valueTo="100.0" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_4"
+                app:checkedIcon="@drawable/baseline_volume_off_24"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_weight="0.5"
+                android:checkable="true"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/content_description_media"
+                        android:scaleType="centerCrop"
+                        app:srcCompat="@drawable/ic_launcher_foreground" />
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_4"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/slider_desc"
+                        android:value="20.0"
+                        android:valueFrom="0.0"
+                        android:valueTo="100.0" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.25"
+            android:orientation="horizontal">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_5"
+                app:checkedIcon="@drawable/baseline_volume_off_24"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_weight="0.5"
+                android:checkable="true"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/content_description_media"
+                        android:scaleType="centerCrop"
+                        app:srcCompat="@drawable/ic_launcher_foreground" />
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_5"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/slider_desc"
+                        android:value="20.0"
+                        android:valueFrom="0.0"
+                        android:valueTo="100.0" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_6"
+                app:checkedIcon="@drawable/baseline_volume_off_24"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_weight="0.5"
+                android:checkable="true"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/content_description_media"
+                        android:scaleType="centerCrop"
+                        app:srcCompat="@drawable/ic_launcher_foreground" />
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_6"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/slider_desc"
+                        android:value="20.0"
+                        android:valueFrom="0.0"
+                        android:valueTo="100.0" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.25"
+            android:orientation="horizontal">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_7"
+                app:checkedIcon="@drawable/baseline_volume_off_24"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_weight="0.5"
+                android:checkable="true"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/content_description_media"
+                        android:scaleType="centerCrop"
+                        app:srcCompat="@drawable/ic_launcher_foreground" />
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_7"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/slider_desc"
+                        android:value="20.0"
+                        android:valueFrom="0.0"
+                        android:valueTo="100.0" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_8"
+                app:checkedIcon="@drawable/baseline_volume_off_24"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_weight="0.5"
+                android:checkable="true"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/content_description_media"
+                        android:scaleType="centerCrop"
+                        app:srcCompat="@drawable/ic_launcher_foreground" />
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_8"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/slider_desc"
+                        android:value="20.0"
+                        android:valueFrom="0.0"
+                        android:valueTo="100.0" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
