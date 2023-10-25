@@ -1,12 +1,15 @@
 package uk.golbourn.noice.ui.main;
 
-public class CardModel {
+public class CardConfig {
     private final int cardId;
     private final int sliderId;
 
-    public CardModel(final int cardId, final int sliderId) {
+    private final int audioChannel;
+
+    public CardConfig(final int cardId, final int sliderId, final int audioChannel) {
         this.cardId = cardId;
         this.sliderId = sliderId;
+        this.audioChannel = audioChannel;
     }
 
     public int getSliderId() {
@@ -15,5 +18,9 @@ public class CardModel {
 
     public int getCardId() {
         return cardId;
+    }
+
+    public int getAudioChannel() {
+        return audioChannel;
     }
 }

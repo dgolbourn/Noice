@@ -1,8 +1,8 @@
 package uk.golbourn.noice;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import uk.golbourn.noice.ui.main.MainFragment;
 
