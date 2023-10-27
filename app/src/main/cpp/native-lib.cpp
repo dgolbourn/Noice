@@ -15,7 +15,6 @@
 //         System.loadLibrary("noice")
 //      }
 //    }
-//#include <oboe/Oboe.h>
 #include <aaudio/AAudio.h>
 #include <cstdint>
 #include <cinttypes>
@@ -24,6 +23,7 @@
 #include <android/asset_manager.h>
 #include <android/log.h>
 #include <media/NdkMediaExtractor.h>
+#include <malloc.h>
 
 #define APP_NAME "noice"
 
@@ -32,99 +32,97 @@
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, APP_NAME, __VA_ARGS__))
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, APP_NAME, __VA_ARGS__))
 
-namespace {
-    constexpr int kMaxCompressionRatio{12};
 
-    struct AudioProperties {
-        int32_t channelCount;
-        int32_t sampleRate;
+constexpr int kMaxCompressionRatio = 12;
+constexpr int kChannelCount = 2;
+constexpr int kSampleRate = 48000;
+
+struct AudioProperties {
+    size_t channelCount;
+    size_t sampleRate;
+};
+
+struct AAssetDataSource {
+    int16_t* buffer;
+    size_t size;
+    AudioProperties properties;
+};
+
+AAudioStream *stream = NULL;
+
+static size_t decode(AAsset *asset, uint8_t *targetData, AudioProperties targetProperties) {
+    LOGD("decode");
+    AMediaFormat *format = NULL;
+    AMediaExtractor *extractor = NULL;
+    AMediaCodec *codec = NULL;
+    size_t bytesWritten = 0;
+
+    // open asset as file descriptor
+    off_t start, length;
+    int fd = AAsset_openFileDescriptor(asset, &start, &length);
+
+    // Extract the audio frames
+    extractor = AMediaExtractor_new();
+    media_status_t amresult = AMediaExtractor_setDataSourceFd(extractor, fd,
+                                                              static_cast<off64_t>(start),
+                                                              static_cast<off64_t>(length));
+    if (amresult != AMEDIA_OK) {
+        LOGE("Error setting extractor data source, err %d", amresult);
+        goto error;
+    }
+
+    // Specify our desired output format by creating it from our source
+    format = AMediaExtractor_getTrackFormat(extractor, 0);
+
+    int32_t sampleRate;
+    if (AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_SAMPLE_RATE, &sampleRate)) {
+        LOGD("Source sample rate %d", sampleRate);
+        if (sampleRate != targetProperties.sampleRate) {
+            LOGE("Input (%d) and output (%d) sample rates do not match. "
+                 "NDK decoder does not support resampling.",
+                 sampleRate,
+                 targetProperties.sampleRate);
+            goto error;
+        }
+    } else {
+        LOGE("Failed to get sample rate");
+        goto error;
     };
 
-    class AAssetDataSource {
-    public:
-        AAssetDataSource(std::unique_ptr<float[]> data, size_t size,
-                         const AudioProperties properties)
-                : mBuffer(std::move(data)), mBufferSize(size), mProperties(properties) {}
-
-        const std::unique_ptr<float[]> mBuffer;
-        const int64_t mBufferSize;
-        const AudioProperties mProperties;
-    };
-
-    static int32_t decode(AAsset *asset, uint8_t *targetData, AudioProperties targetProperties) {
-
-        LOGD("Using NDK decoder");
-
-        // open asset as file descriptor
-        off_t start, length;
-        int fd = AAsset_openFileDescriptor(asset, &start, &length);
-
-        // Extract the audio frames
-        AMediaExtractor *extractor = AMediaExtractor_new();
-        media_status_t amresult = AMediaExtractor_setDataSourceFd(extractor, fd,
-                                                                  static_cast<off64_t>(start),
-                                                                  static_cast<off64_t>(length));
-        if (amresult != AMEDIA_OK) {
-            LOGE("Error setting extractor data source, err %d", amresult);
-            return 0;
+    int32_t channelCount;
+    if (AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_CHANNEL_COUNT, &channelCount)) {
+        LOGD("Got channel count %d", channelCount);
+        if (channelCount != targetProperties.channelCount) {
+            LOGE("NDK decoder does not support different "
+                 "input (%d) and output (%d) channel counts",
+                 channelCount,
+                 targetProperties.channelCount);
         }
+    } else {
+        LOGE("Failed to get channel count");
+        goto error;
+    }
 
-        // Specify our desired output format by creating it from our source
-        AMediaFormat *format = AMediaExtractor_getTrackFormat(extractor, 0);
+    LOGD("Output format %s", AMediaFormat_toString(format));
 
-        int32_t sampleRate;
-        if (AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_SAMPLE_RATE, &sampleRate)) {
-            LOGD("Source sample rate %d", sampleRate);
-            if (sampleRate != targetProperties.sampleRate) {
-                LOGE("Input (%d) and output (%d) sample rates do not match. "
-                     "NDK decoder does not support resampling.",
-                     sampleRate,
-                     targetProperties.sampleRate);
-                return 0;
-            }
-        } else {
-            LOGE("Failed to get sample rate");
-            return 0;
-        };
+    const char *mimeType;
+    if (AMediaFormat_getString(format, AMEDIAFORMAT_KEY_MIME, &mimeType)) {
+        LOGD("Got mime type %s", mimeType);
+    } else {
+        LOGE("Failed to get mime type");
+        goto error;
+    }
 
-        int32_t channelCount;
-        if (AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_CHANNEL_COUNT, &channelCount)) {
-            LOGD("Got channel count %d", channelCount);
-            if (channelCount != targetProperties.channelCount) {
-                LOGE("NDK decoder does not support different "
-                     "input (%d) and output (%d) channel counts",
-                     channelCount,
-                     targetProperties.channelCount);
-            }
-        } else {
-            LOGE("Failed to get channel count");
-            return 0;
-        }
+    // Obtain the correct decoder
+    AMediaExtractor_selectTrack(extractor, 0);
+    codec = AMediaCodec_createDecoderByType(mimeType);
+    AMediaCodec_configure(codec, format, nullptr, nullptr, 0);
+    AMediaCodec_start(codec);
 
-        const char *formatStr = AMediaFormat_toString(format);
-        LOGD("Output format %s", formatStr);
-
-        const char *mimeType;
-        if (AMediaFormat_getString(format, AMEDIAFORMAT_KEY_MIME, &mimeType)) {
-            LOGD("Got mime type %s", mimeType);
-        } else {
-            LOGE("Failed to get mime type");
-            return 0;
-        }
-
-        // Obtain the correct decoder
-        AMediaCodec *codec = nullptr;
-        AMediaExtractor_selectTrack(extractor, 0);
-        codec = AMediaCodec_createDecoderByType(mimeType);
-        AMediaCodec_configure(codec, format, nullptr, nullptr, 0);
-        AMediaCodec_start(codec);
-
-        // DECODE
-
+    // DECODE
+    {
         bool isExtracting = true;
         bool isDecoding = true;
-        int32_t bytesWritten = 0;
-
         while (isExtracting || isDecoding) {
 
             if (isExtracting) {
@@ -219,75 +217,89 @@ namespace {
                 }
             }
         }
+    }
+error:
+    AMediaFormat_delete(format);
+    AMediaCodec_delete(codec);
+    AMediaExtractor_delete(extractor);
+    return bytesWritten;
+}
 
-        // Clean up
-        AMediaFormat_delete(format);
-        AMediaCodec_delete(codec);
-        AMediaExtractor_delete(extractor);
-
-        return bytesWritten;
+static AAssetDataSource new_data_source(
+        AAssetManager &assetManager,
+        const char *filename,
+        const AudioProperties targetProperties) {
+    LOGD("new_data_source %s", filename);
+    AAssetDataSource dataSource = {};
+    AAsset *asset = AAssetManager_open(&assetManager, filename, AASSET_MODE_UNKNOWN);
+    if (!asset) {
+        LOGE("Failed to open asset %s", filename);
+        goto error;
     }
 
-    static AAssetDataSource *newFromCompressedAsset(
-            AAssetManager &assetManager,
-            const char *filename,
-            const AudioProperties targetProperties) {
-
-        AAsset *asset = AAssetManager_open(&assetManager, filename, AASSET_MODE_UNKNOWN);
-        if (!asset) {
-            LOGE("Failed to open asset %s", filename);
-            return nullptr;
-        }
-
+    // Decode
+    {
         off_t assetSize = AAsset_getLength(asset);
-        LOGD("Opened %s, size %ld", filename, assetSize);
-
         const long maximumDataSizeInBytes = kMaxCompressionRatio * assetSize * sizeof(int16_t);
-        auto decodedData = new uint8_t[maximumDataSizeInBytes];
-
-        int64_t bytesDecoded = decode(asset, decodedData, targetProperties);
-        auto numSamples = bytesDecoded / sizeof(int16_t);
-
-        // Now we know the exact number of samples we can create a float array to hold the audio data
-        auto outputBuffer = std::make_unique<float[]>(numSamples);
-
-        oboe::convertPcm16ToFloat(
-                reinterpret_cast<int16_t *>(decodedData),
-                outputBuffer.get(),
-                bytesDecoded / sizeof(int16_t));
-
-        delete[] decodedData;
-        AAsset_close(asset);
-
-        return new AAssetDataSource(std::move(outputBuffer),
-                                    numSamples,
-                                    targetProperties);
+        void *decodedData = malloc(maximumDataSizeInBytes);
+        size_t bytesDecoded = decode(asset, (uint8_t *) decodedData, targetProperties);
+        dataSource.size = bytesDecoded / sizeof(int16_t);
+        dataSource.buffer = (int16_t *) decodedData;
+        dataSource.properties = targetProperties;
     }
 
-    class OboeSinePlayer: public oboe::AudioStreamDataCallback {
-    public:
+    // Now we know the exact number of samples we can create a float array to hold the audio data
+//    auto outputBuffer = std::make_unique<float[]>(numSamples);
 
-        virtual ~OboeSinePlayer() = default;
+//    convertPcm16ToFloat(
+//            reinterpret_cast<int16_t *>(decodedData),
+//            outputBuffer.get(),
+//            bytesDecoded / sizeof(int16_t));
+error:
+    AAsset_close(asset);
+    return dataSource;
+}
 
-        // Call this from Activity onResume()
-        int32_t startAudio() {
-            std::lock_guard<std::mutex> lock(mLock);
+static aaudio_data_callback_result_t audio_callback(AAudioStream *stream, void *userData, void *audioData, int32_t numFrames) {
+//    float *floatData = (float *) audioData;
+//    for (int i = 0; i < numFrames; ++i) {
+//        float sampleValue = kAmplitude * sinf(mPhase);
+//        for (int j = 0; j < kChannelCount; j++) {
+//            floatData[i * kChannelCount + j] = sampleValue;
+//        }
+//        mPhase += mPhaseIncrement;
+//        if (mPhase >= kTwoPi) mPhase -= kTwoPi;
+//    }
+    return AAUDIO_CALLBACK_RESULT_CONTINUE;
+}
 
-            AAudioStreamBuilder *builder;
-            aaudio_result_t result = AAudio_createStreamBuilder(&builder);
-            //AAudioStreamBuilder_setDeviceId(builder, deviceId);
-            AAudioStreamBuilder_setDirection(builder, AAUDIO_DIRECTION_OUTPUT);
-            AAudioStreamBuilder_setSharingMode(builder, AAUDIO_SHARING_MODE_EXCLUSIVE);
-            AAudioStreamBuilder_setSampleRate(builder, kSampleRate);
-            AAudioStreamBuilder_setChannelCount(builder, kChannelCount);
-            AAudioStreamBuilder_setFormat(builder, AAUDIO_FORMAT_PCM_FLOAT);
-            AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
-            //AAudioStreamBuilder_setBufferCapacityInFrames(builder, frames);
-            AAudioStreamBuilder_setUsage(builder, AAUDIO_USAGE_MEDIA);
+    // Call this from Activity onResume()
+static int32_t startAudio() {
+    //std::lock_guard<std::mutex> lock(mLock);
 
-            AAudioStream *stream;
-            result = AAudioStreamBuilder_openStream(builder, &stream);
+    AAudioStreamBuilder *builder;
+    aaudio_result_t result = AAUDIO_OK;
+    result = AAudio_createStreamBuilder(&builder);
+    if (result != AAUDIO_OK) {
+        LOGE("Error AAudio_createStreamBuilder, err %d", result);
+        goto error;
+    }
+    //AAudioStreamBuilder_setDeviceId(builder, deviceId);
+    AAudioStreamBuilder_setDirection(builder, AAUDIO_DIRECTION_OUTPUT);
+    AAudioStreamBuilder_setSharingMode(builder, AAUDIO_SHARING_MODE_EXCLUSIVE);
+    AAudioStreamBuilder_setSampleRate(builder, kSampleRate);
+    AAudioStreamBuilder_setChannelCount(builder, kChannelCount);
+    AAudioStreamBuilder_setFormat(builder, AAUDIO_FORMAT_PCM_FLOAT);
+    AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
+    //AAudioStreamBuilder_setBufferCapacityInFrames(builder, frames);
+    //AAudioStreamBuilder_setUsage(builder, AAUDIO_USAGE_MEDIA);
+    AAudioStreamBuilder_setDataCallback(builder, audio_callback, NULL);
 
+    result = AAudioStreamBuilder_openStream(builder, &stream);
+    if (result != AAUDIO_OK) {
+        LOGE("Error AAudioStreamBuilder_openStream, err %d", result);
+        goto error;
+    }
 
 //            // The builder set methods can be chained for convenience.
 //            oboe::Result result = builder.setSharingMode(oboe::SharingMode::Exclusive)
@@ -298,51 +310,27 @@ namespace {
 //                    ->setFormat(oboe::AudioFormat::Float)
 //                    ->setDataCallback(this)
 //                    ->openStream(mStream);
-            if (result != oboe::Result::OK) return (int32_t) result;
 
-            // Typically, start the stream after querying some stream information, as well as some input from the user
-            result = mStream->requestStart();
-            return (int32_t) result;
-        }
+//if (result != AAUDIO_OK) return (int32_t) result;
 
-        // Call this from Activity onPause()
-        void stopAudio() {
-            // Stop, close and delete in case not already closed.
-            std::lock_guard<std::mutex> lock(mLock);
-            if (mStream) {
-                mStream->stop();
-                mStream->close();
-                mStream.reset();
-            }
-        }
+    // Typically, start the stream after querying some stream information, as well as some input from the user
 
-        oboe::DataCallbackResult onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) override {
-            float *floatData = (float *) audioData;
-            for (int i = 0; i < numFrames; ++i) {
-                float sampleValue = kAmplitude * sinf(mPhase);
-                for (int j = 0; j < kChannelCount; j++) {
-                    floatData[i * kChannelCount + j] = sampleValue;
-                }
-                mPhase += mPhaseIncrement;
-                if (mPhase >= kTwoPi) mPhase -= kTwoPi;
-            }
-            return oboe::DataCallbackResult::Continue;
-        }
-
-    private:
-        std::mutex         mLock;
-        std::shared_ptr<oboe::AudioStream> mStream;
-
-        // Stream params
-        static int constexpr kChannelCount = 2;
-        static int constexpr kSampleRate = 48000;
-        // Wave params, these could be instance variables in order to modify at runtime
-        static float constexpr kAmplitude = 0.5f;
-        static float constexpr kFrequency = 440;
-        static float constexpr kPI = M_PI;
-        static float constexpr kTwoPi = kPI * 2;
-        static double constexpr mPhaseIncrement = kFrequency * kTwoPi / (double) kSampleRate;
-        // Keeps track of where the wave is
-        float mPhase = 0.0;
-    };
+    result = AAudioStream_requestStart(stream);
+    if (result != AAUDIO_OK) {
+        LOGE("Error AAudioStream_requestStart, err %d", result);
+        goto error;
+    }
+error:
+    aaudio_result_t delete_result = AAudioStreamBuilder_delete(builder);
+    if (delete_result != AAUDIO_OK) {
+        LOGE("Error AAudioStreamBuilder_delete, err %d", delete_result);
+    }
+    return (int32_t) result;
 }
+
+// Call this from Activity onPause()
+static void stopAudio() {
+    AAudioStream_requestStop(stream);
+    AAudioStream_close(stream);
+}
+
