@@ -15,7 +15,8 @@
 //         System.loadLibrary("noice")
 //      }
 //    }
-#include <oboe/Oboe.h>
+//#include <oboe/Oboe.h>
+#include <aaudio/AAudio.h>
 #include <cstdint>
 #include <cinttypes>
 #include <sys/types.h>
@@ -271,16 +272,32 @@ namespace {
         // Call this from Activity onResume()
         int32_t startAudio() {
             std::lock_guard<std::mutex> lock(mLock);
-            oboe::AudioStreamBuilder builder;
-            // The builder set methods can be chained for convenience.
-            oboe::Result result = builder.setSharingMode(oboe::SharingMode::Exclusive)
-                    ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
-                    ->setChannelCount(kChannelCount)
-                    ->setSampleRate(kSampleRate)
-                    ->setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium)
-                    ->setFormat(oboe::AudioFormat::Float)
-                    ->setDataCallback(this)
-                    ->openStream(mStream);
+
+            AAudioStreamBuilder *builder;
+            aaudio_result_t result = AAudio_createStreamBuilder(&builder);
+            //AAudioStreamBuilder_setDeviceId(builder, deviceId);
+            AAudioStreamBuilder_setDirection(builder, AAUDIO_DIRECTION_OUTPUT);
+            AAudioStreamBuilder_setSharingMode(builder, AAUDIO_SHARING_MODE_EXCLUSIVE);
+            AAudioStreamBuilder_setSampleRate(builder, kSampleRate);
+            AAudioStreamBuilder_setChannelCount(builder, kChannelCount);
+            AAudioStreamBuilder_setFormat(builder, AAUDIO_FORMAT_PCM_FLOAT);
+            AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
+            //AAudioStreamBuilder_setBufferCapacityInFrames(builder, frames);
+            AAudioStreamBuilder_setUsage(builder, AAUDIO_USAGE_MEDIA);
+
+            AAudioStream *stream;
+            result = AAudioStreamBuilder_openStream(builder, &stream);
+
+
+//            // The builder set methods can be chained for convenience.
+//            oboe::Result result = builder.setSharingMode(oboe::SharingMode::Exclusive)
+//                    ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
+//                    ->setChannelCount(kChannelCount)
+//                    ->setSampleRate(kSampleRate)
+//                    ->setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium)
+//                    ->setFormat(oboe::AudioFormat::Float)
+//                    ->setDataCallback(this)
+//                    ->openStream(mStream);
             if (result != oboe::Result::OK) return (int32_t) result;
 
             // Typically, start the stream after querying some stream information, as well as some input from the user
