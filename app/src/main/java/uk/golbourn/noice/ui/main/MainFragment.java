@@ -21,16 +21,6 @@ import uk.golbourn.noice.R;
 
 public class MainFragment extends Fragment {
 
-    private final CardConfig[] cardConfigs = {
-            new CardConfig(R.id.card_1, R.id.slider_1, 1),
-            new CardConfig(R.id.card_2, R.id.slider_2, 2),
-            new CardConfig(R.id.card_3, R.id.slider_3, 3),
-            new CardConfig(R.id.card_4, R.id.slider_4, 4),
-            new CardConfig(R.id.card_5, R.id.slider_5, 5),
-            new CardConfig(R.id.card_6, R.id.slider_6, 6),
-            new CardConfig(R.id.card_7, R.id.slider_7, 7),
-            new CardConfig(R.id.card_8, R.id.slider_8, 8)
-    };
     private MainViewModel viewModel;
     private AudioService audioService;
     private ServiceConnection connection = new ServiceConnection() {
@@ -77,7 +67,7 @@ public class MainFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_main, container, false);
-        for (final CardConfig cardConfig : cardConfigs) {
+        for (final CardConfig cardConfig : CardConfig.cardConfigs) {
             final MaterialCardView materialCardView = (MaterialCardView) view.findViewById(cardConfig.getCardId());
             final Slider slider = (Slider) view.findViewById(cardConfig.getSliderId());
             materialCardView.setChecked(true);

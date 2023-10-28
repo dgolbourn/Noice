@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.4.1)
+project(Noice)
+add_library(native-lib SHARED native-lib.c)
+find_library(AAudio-lib AAudio REQUIRED)
+find_library(android-lib android REQUIRED)
+target_link_libraries(native-lib log ${AAudio-lib} ${android-lib} mediandk)

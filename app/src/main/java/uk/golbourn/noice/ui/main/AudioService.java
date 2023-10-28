@@ -18,6 +18,17 @@ import uk.golbourn.noice.MainActivity;
 import uk.golbourn.noice.R;
 
 public class AudioService extends Service {
+    private static native void initialise();
+
+    private static native void destroy();
+
+    private static native void start();
+
+    private static native void stop();
+
+    private static native void setNativeChannelVolume(int i, float Volume);
+
+    private static native void setNativeChannelPlaying(int i, boolean isPlaying);
 
     private final IBinder binder = new AudioServiceBinder();
 
@@ -26,15 +37,31 @@ public class AudioService extends Service {
 
     public void toggleChannel(int i, boolean isPlaying) {
         System.out.println("Channel " + i + " " + (isPlaying ? "is Playing" : "is Paused"));
+        setNativeChannelPlaying(i, isPlaying);
     }
 
     public void setChannelVolume(int i, float volume) {
         System.out.println("Channel " + i + " volume is " + volume);
+        setNativeChannelVolume(i, volume);
     }
 
     @Override
     public IBinder onBind(Intent intent) {
         return binder;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        initialise();
+        start();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        stop();
+        destroy();
     }
 
     @Override
