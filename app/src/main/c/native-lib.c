@@ -7,6 +7,7 @@
 #include <string.h>
 #include <jni.h>
 #include <android/asset_manager_jni.h>
+#include <tgmath.h>
 
 #define APP_NAME "noice"
 
@@ -25,6 +26,10 @@ typedef struct {
     _Atomic bool is_playing;
     size_t cursor;
 } Buffer;
+
+static float curve(float volume) {
+    return (1.f / 32768.f) * (exp2(volume) - 1.f);
+}
 
 static bool
 buffer_initialise(AAssetManager *const assetManager, const char *filename, Buffer *const output) {
@@ -186,7 +191,7 @@ buffer_initialise(AAssetManager *const assetManager, const char *filename, Buffe
         }
         output->size = output_cursor / sizeof(int16_t);
         output->data = (int16_t *) output_data;
-        output->volume = 1.f;
+        output->volume = curve(.5f);
         output->is_playing = false;
         output->cursor = 0;
         output_data = NULL;
@@ -219,7 +224,7 @@ audio_callback(AAudioStream *const audio_stream, void *const user_data, void *co
                     }
                 }
             }
-            floatData[i * config_channel_count + j] = sample * (1.0f / 32768.0f);
+            floatData[i * config_channel_count + j] = sample;
         }
     }
     return AAUDIO_CALLBACK_RESULT_CONTINUE;
@@ -263,7 +268,7 @@ static void buffer_close(Buffer *const buffer) {
     free(buffer->data);
     buffer->data = NULL;
     buffer->size = 0;
-    buffer->volume = 1.f;
+    buffer->volume = 0.f;
     buffer->cursor = 0;
     buffer->is_playing = false;
 }
@@ -293,7 +298,7 @@ Java_uk_golbourn_noice_ui_main_AudioService_setNativeChannelVolume(JNIEnv *env, 
     LOGI("Java_uk_golbourn_noice_ui_main_AudioService_setNativeChannelVolume");
     (void) env;
     (void) class;
-    buffers[i].volume = volume;
+    buffers[i].volume =  curve(volume);
 }
 
 JNIEXPORT void JNICALL
