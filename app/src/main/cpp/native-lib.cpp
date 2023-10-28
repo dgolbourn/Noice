@@ -45,82 +45,99 @@ struct AudioProperties {
 struct AAssetDataSource {
     int16_t* buffer;
     size_t size;
-    AudioProperties properties;
 };
 
 AAudioStream *stream = NULL;
 
-static size_t decode(AAsset *asset, uint8_t *targetData, AudioProperties targetProperties) {
-    LOGD("decode");
+static int decode(AAssetManager *assetManager, const char *filename, AudioProperties targetProperties, AAssetDataSource **output) {
+    *output = NULL;
+    AAsset *asset = NULL;
     AMediaFormat *format = NULL;
     AMediaExtractor *extractor = NULL;
     AMediaCodec *codec = NULL;
-    size_t bytesWritten = 0;
 
-    // open asset as file descriptor
-    off_t start, length;
-    int fd = AAsset_openFileDescriptor(asset, &start, &length);
-
-    // Extract the audio frames
-    extractor = AMediaExtractor_new();
-    media_status_t amresult = AMediaExtractor_setDataSourceFd(extractor, fd,
-                                                              static_cast<off64_t>(start),
-                                                              static_cast<off64_t>(length));
-    if (amresult != AMEDIA_OK) {
-        LOGE("Error setting extractor data source, err %d", amresult);
-        goto error;
-    }
-
-    // Specify our desired output format by creating it from our source
-    format = AMediaExtractor_getTrackFormat(extractor, 0);
-
-    int32_t sampleRate;
-    if (AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_SAMPLE_RATE, &sampleRate)) {
-        LOGD("Source sample rate %d", sampleRate);
-        if (sampleRate != targetProperties.sampleRate) {
-            LOGE("Input (%d) and output (%d) sample rates do not match. "
-                 "NDK decoder does not support resampling.",
-                 sampleRate,
-                 targetProperties.sampleRate);
+    // Asset Manager
+    {
+        asset = AAssetManager_open(assetManager, filename, AASSET_MODE_UNKNOWN);
+        if (!asset) {
+            LOGE("Failed to open asset %s", filename);
             goto error;
         }
-    } else {
-        LOGE("Failed to get sample rate");
-        goto error;
-    };
+    }
 
-    int32_t channelCount;
-    if (AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_CHANNEL_COUNT, &channelCount)) {
-        LOGD("Got channel count %d", channelCount);
-        if (channelCount != targetProperties.channelCount) {
-            LOGE("NDK decoder does not support different "
-                 "input (%d) and output (%d) channel counts",
-                 channelCount,
-                 targetProperties.channelCount);
+    // Media Extractor
+    {
+        off_t start, length;
+        int fd = AAsset_openFileDescriptor(asset, &start, &length);
+        extractor = AMediaExtractor_new();
+        media_status_t amresult = AMediaExtractor_setDataSourceFd(extractor, fd,
+                                                                  static_cast<off64_t>(start),
+                                                                  static_cast<off64_t>(length));
+        if (amresult != AMEDIA_OK) {
+            LOGE("Error setting extractor data source, err %d", amresult);
+            goto error;
         }
-    } else {
-        LOGE("Failed to get channel count");
-        goto error;
     }
 
-    LOGD("Output format %s", AMediaFormat_toString(format));
+    // Format
+    {
+        format = AMediaExtractor_getTrackFormat(extractor, 0);
 
-    const char *mimeType;
-    if (AMediaFormat_getString(format, AMEDIAFORMAT_KEY_MIME, &mimeType)) {
-        LOGD("Got mime type %s", mimeType);
-    } else {
-        LOGE("Failed to get mime type");
-        goto error;
+        int32_t sampleRate;
+        if (AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_SAMPLE_RATE, &sampleRate)) {
+            LOGD("Source sample rate %d", sampleRate);
+            if (sampleRate != targetProperties.sampleRate) {
+                LOGE("Input (%d) and output (%d) sample rates do not match. "
+                     "NDK decoder does not support resampling.",
+                     sampleRate,
+                     targetProperties.sampleRate);
+                goto error;
+            }
+        } else {
+            LOGE("Failed to get sample rate");
+            goto error;
+        }
+
+        int32_t channelCount;
+        if (AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_CHANNEL_COUNT, &channelCount)) {
+            LOGD("Got channel count %d", channelCount);
+            if (channelCount != targetProperties.channelCount) {
+                LOGE("NDK decoder does not support different "
+                     "input (%d) and output (%d) channel counts",
+                     channelCount,
+                     targetProperties.channelCount);
+            }
+        } else {
+            LOGE("Failed to get channel count");
+            goto error;
+        }
+
+        LOGD("Output format %s", AMediaFormat_toString(format));
     }
 
-    // Obtain the correct decoder
-    AMediaExtractor_selectTrack(extractor, 0);
-    codec = AMediaCodec_createDecoderByType(mimeType);
-    AMediaCodec_configure(codec, format, nullptr, nullptr, 0);
-    AMediaCodec_start(codec);
+    // Codec
+    {
+        const char *mimeType;
+        if (AMediaFormat_getString(format, AMEDIAFORMAT_KEY_MIME, &mimeType)) {
+            LOGD("Got mime type %s", mimeType);
+        } else {
+            LOGE("Failed to get mime type");
+            goto error;
+        }
+
+        AMediaExtractor_selectTrack(extractor, 0);
+        codec = AMediaCodec_createDecoderByType(mimeType);
+        AMediaCodec_configure(codec, format, nullptr, nullptr, 0);
+        AMediaCodec_start(codec);
+    }
 
     // DECODE
     {
+        off_t assetSize = AAsset_getLength(asset);
+        const long maximumDataSizeInBytes = kMaxCompressionRatio * assetSize * sizeof(int16_t);
+        uint8_t *decodedData = (uint8_t *)malloc(maximumDataSizeInBytes);
+        size_t bytesWritten = 0;
+
         bool isExtracting = true;
         bool isDecoding = true;
         while (isExtracting || isDecoding) {
@@ -195,7 +212,7 @@ static size_t decode(AAsset *asset, uint8_t *targetData, AudioProperties targetP
                          m_writeIndex);*/
 
                     // copy the data out of the buffer
-                    memcpy(targetData + bytesWritten, outputBuffer, info.size);
+                    memcpy(decodedData + bytesWritten, outputBuffer, info.size);
                     bytesWritten += info.size;
                     AMediaCodec_releaseOutputBuffer(codec, outputIndex, false);
                 } else {
@@ -217,47 +234,17 @@ static size_t decode(AAsset *asset, uint8_t *targetData, AudioProperties targetP
                 }
             }
         }
+
+        *output = (AAssetDataSource*)malloc(sizeof(AAssetDataSource));
+        (*output)->size = bytesWritten / sizeof(int16_t);
+        (*output)->buffer = (int16_t *) decodedData;
     }
 error:
     AMediaFormat_delete(format);
     AMediaCodec_delete(codec);
     AMediaExtractor_delete(extractor);
-    return bytesWritten;
-}
-
-static AAssetDataSource new_data_source(
-        AAssetManager &assetManager,
-        const char *filename,
-        const AudioProperties targetProperties) {
-    LOGD("new_data_source %s", filename);
-    AAssetDataSource dataSource = {};
-    AAsset *asset = AAssetManager_open(&assetManager, filename, AASSET_MODE_UNKNOWN);
-    if (!asset) {
-        LOGE("Failed to open asset %s", filename);
-        goto error;
-    }
-
-    // Decode
-    {
-        off_t assetSize = AAsset_getLength(asset);
-        const long maximumDataSizeInBytes = kMaxCompressionRatio * assetSize * sizeof(int16_t);
-        void *decodedData = malloc(maximumDataSizeInBytes);
-        size_t bytesDecoded = decode(asset, (uint8_t *) decodedData, targetProperties);
-        dataSource.size = bytesDecoded / sizeof(int16_t);
-        dataSource.buffer = (int16_t *) decodedData;
-        dataSource.properties = targetProperties;
-    }
-
-    // Now we know the exact number of samples we can create a float array to hold the audio data
-//    auto outputBuffer = std::make_unique<float[]>(numSamples);
-
-//    convertPcm16ToFloat(
-//            reinterpret_cast<int16_t *>(decodedData),
-//            outputBuffer.get(),
-//            bytesDecoded / sizeof(int16_t));
-error:
     AAsset_close(asset);
-    return dataSource;
+    return AMEDIA_OK;
 }
 
 static aaudio_data_callback_result_t audio_callback(AAudioStream *stream, void *userData, void *audioData, int32_t numFrames) {
