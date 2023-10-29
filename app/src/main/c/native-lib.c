@@ -298,7 +298,7 @@ Java_uk_golbourn_noice_ui_main_AudioService_setNativeChannelVolume(JNIEnv *env, 
     LOGI("Java_uk_golbourn_noice_ui_main_AudioService_setNativeChannelVolume");
     (void) env;
     (void) class;
-    buffers[i].volume =  curve(volume);
+    buffers[i].volume = curve(volume);
 }
 
 JNIEXPORT void JNICALL

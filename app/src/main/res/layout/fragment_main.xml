@@ -28,7 +28,7 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/baseline_volume_off_24">
+                app:checkedIcon="@drawable/mute">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -38,7 +38,7 @@
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
-                        android:layout_margin="16dp"
+                        android:layout_margin="20dp"
                         android:contentDescription="brook"
                         app:srcCompat="@drawable/brook" />
 
@@ -65,7 +65,7 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/baseline_volume_off_24">
+                app:checkedIcon="@drawable/mute">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -75,9 +75,9 @@
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
-                        android:layout_margin="16dp"
+                        android:layout_margin="20dp"
                         android:contentDescription="woods"
-                        app:srcCompat="@drawable/woods" />
+                        app:srcCompat="@drawable/birds" />
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_2"
@@ -109,7 +109,7 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/baseline_volume_off_24">
+                app:checkedIcon="@drawable/mute">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -119,7 +119,7 @@
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
-                        android:layout_margin="16dp"
+                        android:layout_margin="20dp"
                         android:contentDescription="city"
                         app:srcCompat="@drawable/city" />
 
@@ -146,7 +146,7 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/baseline_volume_off_24">
+                app:checkedIcon="@drawable/mute">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -156,7 +156,7 @@
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
-                        android:layout_margin="16dp"
+                        android:layout_margin="20dp"
                         android:contentDescription="rain"
                         app:srcCompat="@drawable/rain" />
 
@@ -190,7 +190,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:soundEffectsEnabled="false"
-                app:checkedIcon="@drawable/baseline_volume_off_24">
+                app:checkedIcon="@drawable/mute">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -201,8 +201,8 @@
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
-                        android:layout_margin="16dp"
-                        android:contentDescription="ocean"
+                        android:layout_margin="20dp"
+                        android:contentDescription="waves"
                         app:srcCompat="@drawable/waves" />
 
                     <com.google.android.material.slider.Slider
@@ -228,7 +228,7 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/baseline_volume_off_24">
+                app:checkedIcon="@drawable/mute">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -238,7 +238,7 @@
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
-                        android:layout_margin="16dp"
+                        android:layout_margin="20dp"
                         android:contentDescription="radio"
                         app:srcCompat="@drawable/radio" />
 
@@ -272,7 +272,7 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/baseline_volume_off_24">
+                app:checkedIcon="@drawable/mute">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -282,9 +282,9 @@
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
-                        android:layout_margin="16dp"
-                        android:contentDescription="noise"
-                        app:srcCompat="@drawable/waves2" />
+                        android:layout_margin="20dp"
+                        android:contentDescription="fan"
+                        app:srcCompat="@drawable/fan" />
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_7"
@@ -309,7 +309,7 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/baseline_volume_off_24">
+                app:checkedIcon="@drawable/mute">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -319,9 +319,9 @@
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
-                        android:layout_margin="16dp"
-                        android:contentDescription="wind"
-                        app:srcCompat="@drawable/air" />
+                        android:layout_margin="20dp"
+                        android:contentDescription="people"
+                        app:srcCompat="@drawable/people" />
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_8"

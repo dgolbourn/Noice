@@ -1,9 +1,4 @@
 <resources>
     <string name="app_name">Noice</string>
-    <string name="content_description_media">content description</string>
     <string name="slider_desc">volume</string>
-    <string name="notification">Noice</string>
-    <string name="notification_text">Noise is playing</string>
-    <string name="notification_title">Noice</string>
-    <string name="notification_channel">Noice</string>
 </resources>

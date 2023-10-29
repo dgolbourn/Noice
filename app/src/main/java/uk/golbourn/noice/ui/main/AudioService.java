@@ -8,13 +8,11 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.os.Binder;
-import android.os.Build;
 import android.os.IBinder;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
 
-import uk.golbourn.noice.MainActivity;
 import uk.golbourn.noice.R;
 
 public class AudioService extends Service {
@@ -66,34 +64,19 @@ public class AudioService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel =
-                    new NotificationChannel(getString(R.string.notification_channel),
-                            getString(R.string.notification_channel),
-                            NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription(getString(R.string.notification_channel));
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-
-        Intent alertIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, alertIntent, PendingIntent.FLAG_IMMUTABLE);
-
-        Notification notification =
-                new NotificationCompat.Builder(this, getString(R.string.notification_channel))
-                        .setSmallIcon(R.drawable.notification)
-                        .setContentTitle(getString(R.string.notification_title))
-                        .setContentText(getString(R.string.notification_text))
-                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                        .setContentIntent(pendingIntent)
-                        .setAutoCancel(true)
-                        .build();
-        ServiceCompat.startForeground(
-                this,
-                42,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-        );
+        NotificationChannel channel =
+                new NotificationChannel("Noice",
+                        "Noice",
+                        NotificationManager.IMPORTANCE_DEFAULT);
+        Intent toggleIntent = new Intent(this, AudioService.class);
+        toggleIntent.setAction("Toggle");
+        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 42, toggleIntent, PendingIntent.FLAG_IMMUTABLE);
+        Notification notification = new NotificationCompat.Builder(this, "Noice")
+                .setSmallIcon(R.drawable.notification)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .build();
+        ServiceCompat.startForeground(this, 42, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
         return START_STICKY;
     }
 
