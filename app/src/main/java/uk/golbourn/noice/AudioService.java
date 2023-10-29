@@ -1,4 +1,4 @@
-package uk.golbourn.noice.ui.main;
+package uk.golbourn.noice;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -12,8 +12,6 @@ import android.os.IBinder;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
-
-import uk.golbourn.noice.R;
 
 public class AudioService extends Service {
     private static native void initialise();
@@ -34,13 +32,13 @@ public class AudioService extends Service {
     }
 
     public void toggleChannel(int i, boolean isPlaying) {
-        System.out.println("Channel " + i + " " + (isPlaying ? "is Playing" : "is Paused"));
         setNativeChannelPlaying(i, isPlaying);
+        start();
     }
 
     public void setChannelVolume(int i, float volume) {
-        System.out.println("Channel " + i + " volume is " + volume);
         setNativeChannelVolume(i, volume);
+        start();
     }
 
     @Override
@@ -64,16 +62,26 @@ public class AudioService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        NotificationChannel channel =
-                new NotificationChannel("Noice",
-                        "Noice",
-                        NotificationManager.IMPORTANCE_DEFAULT);
-        Intent toggleIntent = new Intent(this, AudioService.class);
-        toggleIntent.setAction("Toggle");
-        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 42, toggleIntent, PendingIntent.FLAG_IMMUTABLE);
+        NotificationChannel channel = new NotificationChannel("Noice", "Noice", NotificationManager.IMPORTANCE_DEFAULT);
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+
+        Intent contentIntent = new Intent(getApplicationContext(), AudioService.class);
+        PendingIntent pendingContentIntent = PendingIntent.getActivity(getApplicationContext(), 43, contentIntent, PendingIntent.FLAG_IMMUTABLE);
+
+        Intent stopIntent = new Intent(getApplicationContext(), NotificationActionReceiver.class);
+        stopIntent.setAction("Stop");
+        PendingIntent pendingStopIntent = PendingIntent.getBroadcast(getApplicationContext(), 44, stopIntent, PendingIntent.FLAG_IMMUTABLE);
+
+        Intent continueIntent = new Intent(getApplicationContext(), NotificationActionReceiver.class);
+        continueIntent.setAction("Continue");
+        PendingIntent pendingContinueIntent = PendingIntent.getBroadcast(getApplicationContext(), 45, continueIntent, PendingIntent.FLAG_IMMUTABLE);
+
         Notification notification = new NotificationCompat.Builder(this, "Noice")
                 .setSmallIcon(R.drawable.notification)
-                .setContentIntent(pendingIntent)
+                .setContentIntent(pendingContentIntent)
+                .addAction(R.drawable.pause, "Pause", pendingStopIntent)
+                .addAction(R.drawable.play, "Resume", pendingContinueIntent)
                 .setOngoing(true)
                 .build();
         ServiceCompat.startForeground(this, 42, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);

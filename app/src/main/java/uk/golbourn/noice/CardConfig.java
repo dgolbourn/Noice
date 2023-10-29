@@ -1,6 +1,4 @@
-package uk.golbourn.noice.ui.main;
-
-import uk.golbourn.noice.R;
+package uk.golbourn.noice;
 
 public class CardConfig {
 

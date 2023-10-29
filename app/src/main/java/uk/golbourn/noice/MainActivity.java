@@ -5,9 +5,6 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import uk.golbourn.noice.ui.main.CardConfig;
-import uk.golbourn.noice.ui.main.MainFragment;
-
 public class MainActivity extends AppCompatActivity {
     static {
         System.loadLibrary("native-lib");

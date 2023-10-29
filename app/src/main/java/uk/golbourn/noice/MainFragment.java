@@ -1,4 +1,4 @@
-package uk.golbourn.noice.ui.main;
+package uk.golbourn.noice;
 
 import android.content.ComponentName;
 import android.content.Intent;
@@ -12,16 +12,12 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.slider.Slider;
 
-import uk.golbourn.noice.R;
-
 public class MainFragment extends Fragment {
 
-    private MainViewModel viewModel;
     private AudioService audioService;
     private ServiceConnection connection = new ServiceConnection() {
 
@@ -45,7 +41,6 @@ public class MainFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        viewModel = new ViewModelProvider(this).get(MainViewModel.class);
         getContext().startForegroundService(new Intent(getContext(), AudioService.class));
     }
 
@@ -54,6 +49,7 @@ public class MainFragment extends Fragment {
         super.onStart();
         Intent intent = new Intent(getContext(), AudioService.class);
         getContext().bindService(intent, connection, getContext().BIND_AUTO_CREATE);
+
     }
 
     @Override
