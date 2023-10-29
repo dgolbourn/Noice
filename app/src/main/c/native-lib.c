@@ -20,8 +20,13 @@ static const int config_channel_count = 1;
 static const int config_sample_rate = 44100;
 
 typedef struct {
-    int16_t *data;
+    _Atomic (int16_t *) data;
     size_t size;
+} Data;
+
+typedef struct {
+    Data quick;
+    Data data;
     _Atomic float volume;
     _Atomic bool is_playing;
     size_t cursor;
@@ -32,8 +37,8 @@ static float curve(float volume) {
 }
 
 static bool
-buffer_initialise(AAssetManager *const assetManager, const char *filename, Buffer *const output) {
-    LOGI(__func__);
+buffer_initialise(AAssetManager *const assetManager, const char *filename, Data *const output) {
+    LOGD(__func__);
     AAsset *asset = NULL;
     AMediaFormat *format = NULL;
     AMediaExtractor *extractor = NULL;
@@ -191,9 +196,6 @@ buffer_initialise(AAssetManager *const assetManager, const char *filename, Buffe
         }
         output->size = output_cursor / sizeof(int16_t);
         output->data = (int16_t *) output_data;
-        output->volume = curve(.5f);
-        output->is_playing = false;
-        output->cursor = 0;
         output_data = NULL;
         result = AMEDIA_OK;
     }
@@ -217,10 +219,17 @@ audio_callback(AAudioStream *const audio_stream, void *const user_data, void *co
             float sample = .0f;
             for (int k = 0; k < 8; ++k) {
                 Buffer *buffer = &buffers[k];
-                if (buffer->is_playing && buffer->data) { ;
-                    sample += buffer->data[buffer->cursor] * buffer->volume;
-                    if (++buffer->cursor >= buffer->size) {
-                        buffer->cursor = 0;
+                if (buffer->is_playing) {
+                    if (buffer->data.data) {
+                        sample += buffer->data.data[buffer->cursor] * buffer->volume;
+                        if (++buffer->cursor >= buffer->data.size) {
+                            buffer->cursor = 0;
+                        }
+                    } else if (buffer->quick.data) {
+                        sample += buffer->quick.data[buffer->cursor] * buffer->volume;
+                        if (++buffer->cursor >= buffer->quick.size) {
+                            buffer->cursor = 0;
+                        }
                     }
                 }
             }
@@ -233,8 +242,8 @@ audio_callback(AAudioStream *const audio_stream, void *const user_data, void *co
 static AAudioStream *stream = NULL;
 static Buffer buffers[8] = {};
 
-static bool audio_stream_open() {
-    LOGI(__func__);
+static void audio_stream_open() {
+    LOGD(__func__);
     AAudioStreamBuilder *builder;
     aaudio_result_t result = AAUDIO_OK;
     result = AAudio_createStreamBuilder(&builder);
@@ -264,25 +273,26 @@ static bool audio_stream_open() {
 }
 
 static void buffer_close(Buffer *const buffer) {
-    LOGI(__func__);
-    free(buffer->data);
-    buffer->data = NULL;
-    buffer->size = 0;
-    buffer->volume = 0.f;
+    LOGD(__func__);
+    free(buffer->data.data);
+    buffer->data.size = 0;
+    free(buffer->quick.data);
+    buffer->quick.size = 0;
+    buffer->volume = curve(.5f);
     buffer->cursor = 0;
     buffer->is_playing = false;
 }
 
 JNIEXPORT void JNICALL
 Java_uk_golbourn_noice_AudioService_initialise(JNIEnv *env, jclass class) {
-    LOGI(__func__);
+    LOGD(__func__);
     (void) class;
     audio_stream_open();
 }
 
 JNIEXPORT void JNICALL
 Java_uk_golbourn_noice_AudioService_destroy(JNIEnv *env, jclass class) {
-    LOGI(__func__);
+    LOGD(__func__);
     (void) env;
     (void) class;
     aaudio_result_t result = AAudioStream_close(stream);
@@ -295,7 +305,7 @@ Java_uk_golbourn_noice_AudioService_destroy(JNIEnv *env, jclass class) {
 JNIEXPORT void JNICALL
 Java_uk_golbourn_noice_AudioService_setNativeChannelVolume(JNIEnv *env, jclass class,
                                                                    jint i, jfloat volume) {
-    LOGI(__func__);
+    LOGD(__func__);
     (void) env;
     (void) class;
     buffers[i].volume = curve(volume);
@@ -304,7 +314,7 @@ Java_uk_golbourn_noice_AudioService_setNativeChannelVolume(JNIEnv *env, jclass c
 JNIEXPORT void JNICALL
 Java_uk_golbourn_noice_AudioService_setNativeChannelPlaying(JNIEnv *env, jclass class,
                                                                     jint i, jboolean is_playing) {
-    LOGI(__func__);
+    LOGD(__func__);
     (void) env;
     (void) class;
     buffers[i].is_playing = is_playing;
@@ -312,7 +322,7 @@ Java_uk_golbourn_noice_AudioService_setNativeChannelPlaying(JNIEnv *env, jclass 
 
 JNIEXPORT void JNICALL
 Java_uk_golbourn_noice_AudioService_start(JNIEnv *env, jclass class) {
-    LOGI(__func__);
+    LOGD(__func__);
     (void) env;
     (void) class;
     aaudio_result_t result = AAudioStream_requestStart(stream);
@@ -323,7 +333,7 @@ Java_uk_golbourn_noice_AudioService_start(JNIEnv *env, jclass class) {
 
 JNIEXPORT void JNICALL
 Java_uk_golbourn_noice_AudioService_stop(JNIEnv *env, jclass class) {
-    LOGI(__func__);
+    LOGD(__func__);
     (void) env;
     (void) class;
     aaudio_result_t result = AAudioStream_requestStop(stream);
@@ -332,102 +342,54 @@ Java_uk_golbourn_noice_AudioService_stop(JNIEnv *env, jclass class) {
     }
 }
 
+
 JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_MainActivity_initialise(JNIEnv *env, jclass class, jstring file1,
-                                               jstring file2, jstring file3, jstring file4,
-                                               jstring file5, jstring file6, jstring file7,
-                                               jstring file8, jobject jAssetManager) {
-    LOGI(__func__);
+Java_uk_golbourn_noice_MainActivity_quick_1initialise(JNIEnv *env, jclass class, jobjectArray files,
+                                                      jobject jAssetManager) {
+    LOGD(__func__);
     (void) class;
     AAssetManager *assetManager = AAssetManager_fromJava(env, jAssetManager);
     if (assetManager == NULL) {
         LOGE("Could not obtain the AAssetManager");
         return;
     }
-    {
-        const char *filename = (*env)->GetStringUTFChars(env, file1, 0);
-        bool error = buffer_initialise(assetManager, filename, &buffers[0]);
+    for (int i = 0; i < 8; ++i) {
+        Buffer *buffer = &buffers[i];
+        buffer->volume = curve(.5f);
+        buffer->is_playing = false;
+        buffer->cursor = 0;
+        jstring file = (jstring) (*env)->GetObjectArrayElement(env, files, i);
+        const char *filename = (*env)->GetStringUTFChars(env, file, 0);
+        bool error = buffer_initialise(assetManager, filename, &buffer->quick);
         if (error) {
             LOGE("Could not load %s", filename);
         }
-        (*env)->ReleaseStringUTFChars(env, file1, filename);
+        (*env)->ReleaseStringUTFChars(env, file, filename);
         if (error) {
             return;
         }
     }
-    {
-        const char *filename = (*env)->GetStringUTFChars(env, file2, 0);
-        bool error = buffer_initialise(assetManager, filename, &buffers[1]);
-        if (error) {
-            LOGE("Could not load %s", filename);
-        }
-        (*env)->ReleaseStringUTFChars(env, file2, filename);
-        if (error) {
-            return;
-        }
+}
+
+JNIEXPORT void JNICALL
+Java_uk_golbourn_noice_MainActivity_lazy_1initialise(JNIEnv *env, jclass class, jobjectArray files,
+                                                     jobject jAssetManager) {
+    LOGD(__func__);
+    (void) class;
+    AAssetManager *assetManager = AAssetManager_fromJava(env, jAssetManager);
+    if (assetManager == NULL) {
+        LOGE("Could not obtain the AAssetManager");
+        return;
     }
-    {
-        const char *filename = (*env)->GetStringUTFChars(env, file3, 0);
-        bool error = buffer_initialise(assetManager, filename, &buffers[2]);
+    for (int i = 0; i < 8; ++i) {
+        Buffer *buffer = &buffers[i];
+        jstring file = (jstring) (*env)->GetObjectArrayElement(env, files, i);
+        const char *filename = (*env)->GetStringUTFChars(env, file, 0);
+        bool error = buffer_initialise(assetManager, filename, &buffer->data);
         if (error) {
             LOGE("Could not load %s", filename);
         }
-        (*env)->ReleaseStringUTFChars(env, file3, filename);
-        if (error) {
-            return;
-        }
-    }
-    {
-        const char *filename = (*env)->GetStringUTFChars(env, file4, 0);
-        bool error = buffer_initialise(assetManager, filename, &buffers[3]);
-        if (error) {
-            LOGE("Could not load %s", filename);
-        }
-        (*env)->ReleaseStringUTFChars(env, file4, filename);
-        if (error) {
-            return;
-        }
-    }
-    {
-        const char *filename = (*env)->GetStringUTFChars(env, file5, 0);
-        bool error = buffer_initialise(assetManager, filename, &buffers[4]);
-        if (error) {
-            LOGE("Could not load %s", filename);
-        }
-        (*env)->ReleaseStringUTFChars(env, file5, filename);
-        if (error) {
-            return;
-        }
-    }
-    {
-        const char *filename = (*env)->GetStringUTFChars(env, file6, 0);
-        bool error = buffer_initialise(assetManager, filename, &buffers[5]);
-        if (error) {
-            LOGE("Could not load %s", filename);
-        }
-        (*env)->ReleaseStringUTFChars(env, file6, filename);
-        if (error) {
-            return;
-        }
-    }
-    {
-        const char *filename = (*env)->GetStringUTFChars(env, file7, 0);
-        bool error = buffer_initialise(assetManager, filename, &buffers[6]);
-        if (error) {
-            LOGE("Could not load %s", filename);
-        }
-        (*env)->ReleaseStringUTFChars(env, file7, filename);
-        if (error) {
-            return;
-        }
-    }
-    {
-        const char *filename = (*env)->GetStringUTFChars(env, file8, 0);
-        bool error = buffer_initialise(assetManager, filename, &buffers[7]);
-        if (error) {
-            LOGE("Could not load %s", filename);
-        }
-        (*env)->ReleaseStringUTFChars(env, file8, filename);
+        (*env)->ReleaseStringUTFChars(env, file, filename);
         if (error) {
             return;
         }
@@ -436,7 +398,7 @@ Java_uk_golbourn_noice_MainActivity_initialise(JNIEnv *env, jclass class, jstrin
 
 JNIEXPORT void JNICALL
 Java_uk_golbourn_noice_MainActivity_destroy(JNIEnv *env, jclass class) {
-    LOGI(__func__);
+    LOGD(__func__);
     (void) env;
     (void) class;
     for (int k = 0; k < 8; ++k) {
@@ -446,7 +408,7 @@ Java_uk_golbourn_noice_MainActivity_destroy(JNIEnv *env, jclass class) {
 
 JNIEXPORT void JNICALL
 Java_uk_golbourn_noice_NotificationActionReceiver_start(JNIEnv *env, jclass class) {
-    LOGI(__func__);
+    LOGD(__func__);
     (void) env;
     (void) class;
     aaudio_result_t result = AAudioStream_requestStart(stream);
@@ -457,7 +419,7 @@ Java_uk_golbourn_noice_NotificationActionReceiver_start(JNIEnv *env, jclass clas
 
 JNIEXPORT void JNICALL
 Java_uk_golbourn_noice_NotificationActionReceiver_stop(JNIEnv *env, jclass class) {
-    LOGI(__func__);
+    LOGD(__func__);
     (void) env;
     (void) class;
     aaudio_result_t result = AAudioStream_requestStop(stream);
