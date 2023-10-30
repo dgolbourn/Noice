@@ -53,7 +53,6 @@ buffer_initialise(AAssetManager *const assetManager, const char *filename, Data 
         asset = AAssetManager_open(assetManager, filename, AASSET_MODE_UNKNOWN);
         if (!asset) {
             LOGE("Error AAssetManager_open, Failed to open asset %s", filename);
-            result = AMEDIA_ERROR_UNKNOWN;
             goto error;
         }
     }
@@ -124,7 +123,6 @@ buffer_initialise(AAssetManager *const assetManager, const char *filename, Data 
         bool is_decoding = true;
         while (is_extracting || is_decoding) {
             if(isStopped) {
-                result = AMEDIA_ERROR_UNKNOWN;
                 goto error;
             }
             if (is_extracting) {
