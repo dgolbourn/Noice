@@ -12,8 +12,8 @@ public class NotificationActionReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         switch(intent.getAction()){
-            case "Stop": stop(); break;
-            case "Continue": start(); break;
+            case "uk.golbourn.Intent.Action.Pause": stop(); break;
+            case "uk.golbourn.Intent.Action.Resume": start(); break;
             default: break;
         }
     }

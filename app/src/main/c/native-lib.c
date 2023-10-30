@@ -32,6 +32,8 @@ typedef struct {
     size_t cursor;
 } Buffer;
 
+_Atomic bool isStopped = false;
+
 static float curve(float volume) {
     return (1.f / 32768.f) * (exp2(volume) - 1.f);
 }
@@ -121,6 +123,10 @@ buffer_initialise(AAssetManager *const assetManager, const char *filename, Data 
         bool is_extracting = true;
         bool is_decoding = true;
         while (is_extracting || is_decoding) {
+            if(isStopped) {
+                result = AMEDIA_ERROR_UNKNOWN;
+                goto error;
+            }
             if (is_extracting) {
                 ssize_t inputIndex = AMediaCodec_dequeueInputBuffer(codec, 2000);
                 if (inputIndex < 0) {
@@ -354,19 +360,21 @@ Java_uk_golbourn_noice_MainActivity_quick_1initialise(JNIEnv *env, jclass class,
         return;
     }
     for (int i = 0; i < 8; ++i) {
-        Buffer *buffer = &buffers[i];
-        buffer->volume = curve(.5f);
-        buffer->is_playing = false;
-        buffer->cursor = 0;
-        jstring file = (jstring) (*env)->GetObjectArrayElement(env, files, i);
-        const char *filename = (*env)->GetStringUTFChars(env, file, 0);
-        bool error = buffer_initialise(assetManager, filename, &buffer->quick);
-        if (error) {
-            LOGE("Could not load %s", filename);
-        }
-        (*env)->ReleaseStringUTFChars(env, file, filename);
-        if (error) {
-            return;
+        if(!isStopped) {
+            Buffer *buffer = &buffers[i];
+            buffer->volume = curve(.5f);
+            buffer->is_playing = false;
+            buffer->cursor = 0;
+            jstring file = (jstring) (*env)->GetObjectArrayElement(env, files, i);
+            const char *filename = (*env)->GetStringUTFChars(env, file, 0);
+            bool error = buffer_initialise(assetManager, filename, &buffer->quick);
+            if (error) {
+                LOGE("Could not load %s", filename);
+            }
+            (*env)->ReleaseStringUTFChars(env, file, filename);
+            if (error) {
+                return;
+            }
         }
     }
 }
@@ -382,18 +390,36 @@ Java_uk_golbourn_noice_MainActivity_lazy_1initialise(JNIEnv *env, jclass class, 
         return;
     }
     for (int i = 0; i < 8; ++i) {
-        Buffer *buffer = &buffers[i];
-        jstring file = (jstring) (*env)->GetObjectArrayElement(env, files, i);
-        const char *filename = (*env)->GetStringUTFChars(env, file, 0);
-        bool error = buffer_initialise(assetManager, filename, &buffer->data);
-        if (error) {
-            LOGE("Could not load %s", filename);
-        }
-        (*env)->ReleaseStringUTFChars(env, file, filename);
-        if (error) {
-            return;
+        if(!isStopped) {
+            Buffer *buffer = &buffers[i];
+            jstring file = (jstring) (*env)->GetObjectArrayElement(env, files, i);
+            const char *filename = (*env)->GetStringUTFChars(env, file, 0);
+            bool error = buffer_initialise(assetManager, filename, &buffer->data);
+            if (error) {
+                LOGE("Could not load %s", filename);
+            }
+            (*env)->ReleaseStringUTFChars(env, file, filename);
+            if (error) {
+                return;
+            }
         }
     }
+}
+
+JNIEXPORT void JNICALL
+Java_uk_golbourn_noice_MainActivity_stop(JNIEnv *env, jclass class) {
+    LOGD(__func__);
+    (void) env;
+    (void) class;
+    isStopped = true;
+}
+
+JNIEXPORT void JNICALL
+Java_uk_golbourn_noice_MainActivity_start(JNIEnv *env, jclass class) {
+    LOGD(__func__);
+    (void) env;
+    (void) class;
+    isStopped = false;
 }
 
 JNIEXPORT void JNICALL

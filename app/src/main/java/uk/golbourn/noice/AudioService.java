@@ -62,30 +62,41 @@ public class AudioService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        NotificationChannel channel = new NotificationChannel("Noice", "Noice", NotificationManager.IMPORTANCE_DEFAULT);
-        NotificationManager notificationManager = getSystemService(NotificationManager.class);
-        notificationManager.createNotificationChannel(channel);
+        switch(intent.getAction()) {
+            default:
+            case "uk.golbourn.Intent.Action.Start":
+                NotificationChannel channel = new NotificationChannel("Noice", "Noice", NotificationManager.IMPORTANCE_DEFAULT);
+                NotificationManager notificationManager = getSystemService(NotificationManager.class);
+                notificationManager.createNotificationChannel(channel);
 
-        Intent contentIntent = new Intent(getApplicationContext(), AudioService.class);
-        PendingIntent pendingContentIntent = PendingIntent.getActivity(getApplicationContext(), 43, contentIntent, PendingIntent.FLAG_IMMUTABLE);
+                Intent contentIntent = new Intent(getApplicationContext(), MainActivity.class);
+                contentIntent.setAction(Intent.ACTION_MAIN);
+                contentIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+                contentIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                PendingIntent pendingContentIntent = PendingIntent.getActivity(getApplicationContext(), 43, contentIntent, PendingIntent.FLAG_IMMUTABLE);
 
-        Intent stopIntent = new Intent(getApplicationContext(), NotificationActionReceiver.class);
-        stopIntent.setAction("Stop");
-        PendingIntent pendingStopIntent = PendingIntent.getBroadcast(getApplicationContext(), 44, stopIntent, PendingIntent.FLAG_IMMUTABLE);
+                Intent pauseIntent = new Intent(getApplicationContext(), NotificationActionReceiver.class);
+                pauseIntent.setAction("uk.golbourn.Intent.Action.Pause");
+                PendingIntent pendingPauseIntent = PendingIntent.getBroadcast(getApplicationContext(), 44, pauseIntent, PendingIntent.FLAG_IMMUTABLE);
 
-        Intent continueIntent = new Intent(getApplicationContext(), NotificationActionReceiver.class);
-        continueIntent.setAction("Continue");
-        PendingIntent pendingContinueIntent = PendingIntent.getBroadcast(getApplicationContext(), 45, continueIntent, PendingIntent.FLAG_IMMUTABLE);
+                Intent resumeIntent = new Intent(getApplicationContext(), NotificationActionReceiver.class);
+                resumeIntent.setAction("uk.golbourn.Intent.Action.Resume");
+                PendingIntent pendingResumeIntent = PendingIntent.getBroadcast(getApplicationContext(), 45, resumeIntent, PendingIntent.FLAG_IMMUTABLE);
 
-        Notification notification = new NotificationCompat.Builder(this, "Noice")
-                .setSmallIcon(R.drawable.notification)
-                .setContentIntent(pendingContentIntent)
-                .addAction(R.drawable.pause, "Pause", pendingStopIntent)
-                .addAction(R.drawable.play, "Resume", pendingContinueIntent)
-                .setOngoing(true)
-                .build();
-        ServiceCompat.startForeground(this, 42, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
-        return START_STICKY;
+                Notification notification = new NotificationCompat.Builder(this, "Noice")
+                        .setSmallIcon(R.drawable.notification)
+                        .setContentIntent(pendingContentIntent)
+                        .addAction(R.drawable.pause, "Pause", pendingPauseIntent)
+                        .addAction(R.drawable.play, "Resume", pendingResumeIntent)
+                        .setOngoing(true)
+                        .build();
+                ServiceCompat.startForeground(this, 42, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+            return START_STICKY;
+            case "uk.golbourn.Intent.Action.Stop":
+                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
+                stopSelf();
+                return START_NOT_STICKY;
+        }
     }
 
     public class AudioServiceBinder extends Binder {

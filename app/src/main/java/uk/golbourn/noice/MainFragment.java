@@ -41,7 +41,9 @@ public class MainFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getContext().startForegroundService(new Intent(getContext(), AudioService.class));
+        Intent startServiceIntent = new Intent(getContext(), AudioService.class);
+        startServiceIntent.setAction("uk.golbourn.Intent.Action.Start");
+        getContext().startForegroundService(startServiceIntent);
     }
 
     @Override
@@ -56,6 +58,14 @@ public class MainFragment extends Fragment {
     public void onStop() {
         super.onStop();
         getContext().unbindService(connection);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Intent stopSeviceIntent = new Intent(getContext(), AudioService.class);
+        stopSeviceIntent.setAction("uk.golbourn.Intent.Action.Stop");
+        getContext().startService(stopSeviceIntent);
     }
 
     @Nullable

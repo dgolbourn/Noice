@@ -12,6 +12,10 @@ public class MainActivity extends AppCompatActivity {
         System.loadLibrary("native-lib");
     }
 
+    private static native void start();
+
+    private static native void stop();
+
     private static native void lazy_initialise(String[] files, AssetManager assetManager);
 
     private static native void quick_initialise(String[] files, AssetManager assetManager);
@@ -24,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        start();
         lazyInitialiserThread.start();
         quick_initialise(Arrays.stream(CardConfig.cardConfigs).map(CardConfig::getQuickFileName).toArray(String[]::new), getAssets());
         setContentView(R.layout.activity_main);
@@ -37,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        stop();
         try {
             lazyInitialiserThread.join();
         } catch (InterruptedException e) {
