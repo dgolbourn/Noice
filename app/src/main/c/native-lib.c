@@ -166,8 +166,8 @@ buffer_initialise(AAssetManager *const assetManager, const char *filename, Data 
                     size_t required_output_alloc_size = output_cursor + info.size;
                     while (required_output_alloc_size > output_alloc_size) {
                         output_alloc_size *= 2;
-                        output_data = realloc(output_data, output_alloc_size);
                     }
+                    output_data = realloc(output_data, output_alloc_size);
                     if (output_data) {
                         memcpy((uint8_t *) output_data + output_cursor, output_buffer, info.size);
                         output_cursor = required_output_alloc_size;
