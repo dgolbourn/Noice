@@ -88,6 +88,7 @@ public class AudioService extends Service {
                         .setContentIntent(pendingContentIntent)
                         .addAction(R.drawable.pause, "Pause", pendingPauseIntent)
                         .addAction(R.drawable.play, "Resume", pendingResumeIntent)
+                        .setSilent(true)
                         .setOngoing(true)
                         .build();
                 ServiceCompat.startForeground(this, 42, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
