@@ -51,21 +51,20 @@ public class MainFragment extends Fragment {
         super.onStart();
         Intent intent = new Intent(getContext(), AudioService.class);
         getContext().bindService(intent, connection, getContext().BIND_AUTO_CREATE);
-
     }
 
     @Override
     public void onStop() {
-        super.onStop();
         getContext().unbindService(connection);
+        super.onStop();
     }
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         Intent stopSeviceIntent = new Intent(getContext(), AudioService.class);
         stopSeviceIntent.setAction("uk.golbourn.Intent.Action.Stop");
         getContext().startService(stopSeviceIntent);
+        super.onDestroy();
     }
 
     @Nullable
