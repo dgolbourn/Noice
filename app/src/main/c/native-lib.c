@@ -279,8 +279,10 @@ static void audio_stream_open() {
 static void buffer_close(Buffer *const buffer) {
     LOGD(__func__);
     free(buffer->data.data);
+    buffer->data.data = NULL;
     buffer->data.size = 0;
     free(buffer->quick.data);
+    buffer->quick.data = NULL;
     buffer->quick.size = 0;
     buffer->volume = curve(.5f);
     buffer->cursor = 0;
@@ -304,6 +306,9 @@ Java_uk_golbourn_noice_AudioService_destroy(JNIEnv *env, jclass class) {
         LOGE("Error AAudioStream_close, err %d", result);
     }
     stream = NULL;
+    for (int k = 0; k < 8; ++k) {
+        buffer_close(&buffers[k]);
+    }
 }
 
 JNIEXPORT void JNICALL
@@ -329,6 +334,7 @@ Java_uk_golbourn_noice_AudioService_start(JNIEnv *env, jclass class) {
     LOGD(__func__);
     (void) env;
     (void) class;
+    isStopped = false;
     aaudio_result_t result = AAudioStream_requestStart(stream);
     if (result != AAUDIO_OK) {
         LOGE("Error AAudioStream_requestStart, err %d", result);
@@ -344,11 +350,11 @@ Java_uk_golbourn_noice_AudioService_stop(JNIEnv *env, jclass class) {
     if (result != AAUDIO_OK) {
         LOGE("Error AAudioStream_requestStop, err %d", result);
     }
+    isStopped = true;
 }
 
-
 JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_MainActivity_quick_1initialise(JNIEnv *env, jclass class, jobjectArray files,
+Java_uk_golbourn_noice_AudioService_quickInitialise(JNIEnv *env, jclass class, jobjectArray files,
                                                       jobject jAssetManager) {
     LOGD(__func__);
     (void) class;
@@ -378,7 +384,7 @@ Java_uk_golbourn_noice_MainActivity_quick_1initialise(JNIEnv *env, jclass class,
 }
 
 JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_MainActivity_lazy_1initialise(JNIEnv *env, jclass class, jobjectArray files,
+Java_uk_golbourn_noice_AudioService_lazyInitialise(JNIEnv *env, jclass class, jobjectArray files,
                                                      jobject jAssetManager) {
     LOGD(__func__);
     (void) class;
@@ -401,53 +407,5 @@ Java_uk_golbourn_noice_MainActivity_lazy_1initialise(JNIEnv *env, jclass class, 
                 return;
             }
         }
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_MainActivity_stop(JNIEnv *env, jclass class) {
-    LOGD(__func__);
-    (void) env;
-    (void) class;
-    isStopped = true;
-}
-
-JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_MainActivity_start(JNIEnv *env, jclass class) {
-    LOGD(__func__);
-    (void) env;
-    (void) class;
-    isStopped = false;
-}
-
-JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_MainActivity_destroy(JNIEnv *env, jclass class) {
-    LOGD(__func__);
-    (void) env;
-    (void) class;
-    for (int k = 0; k < 8; ++k) {
-        buffer_close(&buffers[k]);
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_NotificationActionReceiver_start(JNIEnv *env, jclass class) {
-    LOGD(__func__);
-    (void) env;
-    (void) class;
-    aaudio_result_t result = AAudioStream_requestStart(stream);
-    if (result != AAUDIO_OK) {
-        LOGE("Error AAudioStream_requestStart, err %d", result);
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_NotificationActionReceiver_stop(JNIEnv *env, jclass class) {
-    LOGD(__func__);
-    (void) env;
-    (void) class;
-    aaudio_result_t result = AAudioStream_requestStop(stream);
-    if (result != AAUDIO_OK) {
-        LOGE("Error AAudioStream_requestStop, err %d", result);
     }
 }
