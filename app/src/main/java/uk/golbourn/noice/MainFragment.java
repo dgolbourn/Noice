@@ -19,7 +19,7 @@ import com.google.android.material.slider.Slider;
 public class MainFragment extends Fragment {
 
     private AudioService audioService;
-    private ServiceConnection connection = new ServiceConnection() {
+    private final ServiceConnection connection = new ServiceConnection() {
 
         @Override
         public void onServiceConnected(ComponentName className,
@@ -73,8 +73,8 @@ public class MainFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_main, container, false);
         for (final CardConfig cardConfig : CardConfig.cardConfigs) {
-            final MaterialCardView materialCardView = (MaterialCardView) view.findViewById(cardConfig.getCardId());
-            final Slider slider = (Slider) view.findViewById(cardConfig.getSliderId());
+            final MaterialCardView materialCardView = view.findViewById(cardConfig.getCardId());
+            final Slider slider = view.findViewById(cardConfig.getSliderId());
             materialCardView.setChecked(true);
             slider.setVisibility(View.INVISIBLE);
             materialCardView.setOnClickListener(v -> {
