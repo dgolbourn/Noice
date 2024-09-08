@@ -19,33 +19,32 @@
 static const int config_channel_count = 1;
 static const int config_sample_rate = 44100;
 
-typedef struct {
-    _Atomic (int16_t *) data;
+typedef struct Data {
+    _Atomic (struct Data *) next;
+    int16_t *data;
     size_t size;
 } Data;
 
 typedef struct {
-    Data quick;
-    Data data;
+    _Atomic (Data *) head;
     _Atomic float volume;
     _Atomic bool is_playing;
-    size_t cursor;
+    Data *cursor;
+    size_t offset;
 } Buffer;
-
-_Atomic bool isStopped = false;
 
 static float curve(float volume) {
     return (1.f / 32768.f) * (exp2(volume) - 1.f);
 }
 
 static bool
-buffer_initialise(AAssetManager *const assetManager, const char *filename, Data *const output) {
+buffer_initialise(AAssetManager *const assetManager, const char *filename, Buffer *buffer) {
     LOGD(__func__);
     AAsset *asset = NULL;
     AMediaFormat *format = NULL;
     AMediaExtractor *extractor = NULL;
     AMediaCodec *codec = NULL;
-    void *output_data = NULL;
+    Data *output_data = NULL;
     media_status_t result = AMEDIA_ERROR_UNKNOWN;
 
     // Asset Manager
@@ -116,20 +115,14 @@ buffer_initialise(AAssetManager *const assetManager, const char *filename, Data 
 
     // DECODE
     {
-        size_t output_alloc_size = AAsset_getLength(asset);
-        size_t output_cursor = 0;
-        output_data = malloc(output_alloc_size);
         bool is_extracting = true;
         bool is_decoding = true;
         while (is_extracting || is_decoding) {
-            if(isStopped) {
-                goto error;
-            }
             if (is_extracting) {
                 ssize_t inputIndex = AMediaCodec_dequeueInputBuffer(codec, 2000);
                 if (inputIndex < 0) {
                     if (inputIndex == AMEDIACODEC_INFO_TRY_AGAIN_LATER) {
-                        LOGW("AMediaCodec_dequeueInputBuffer: try again later");
+                        LOGD("AMediaCodec_dequeueInputBuffer: try again later");
                     } else {
                         LOGE("Error AMediaCodec_dequeueInputBuffer, err %d", (int) inputIndex);
                         goto error;
@@ -163,52 +156,67 @@ buffer_initialise(AAssetManager *const assetManager, const char *filename, Data 
                     }
                     size_t dummy;
                     uint8_t *output_buffer = AMediaCodec_getOutputBuffer(codec, index, &dummy);
-                    size_t required_output_alloc_size = output_cursor + info.size;
-                    while (required_output_alloc_size > output_alloc_size) {
-                        output_alloc_size *= 2;
+                    output_data = malloc(sizeof(Data));
+                    if (output_data == NULL) {
+                        LOGE("Error malloc");
+                        goto error;
                     }
-                    output_data = realloc(output_data, output_alloc_size);
-                    if (output_data) {
-                        memcpy((uint8_t *) output_data + output_cursor, output_buffer, info.size);
-                        output_cursor = required_output_alloc_size;
+                    output_data->next = NULL;
+                    output_data->size = info.size / sizeof(int16_t);
+                    output_data->data = malloc(info.size);
+                    if (output_data->data == NULL) {
+                        LOGE("Error malloc");
+                        goto error;
                     }
+                    memcpy(output_data->data, output_buffer, info.size);
                     result = AMediaCodec_releaseOutputBuffer(codec, index, false);
                     if (result != AMEDIA_OK) {
                         LOGE("Error AMediaCodec_releaseOutputBuffer, err %d", result);
                         goto error;
                     }
-                    if (output_data == NULL) {
-                        LOGE("Error realloc");
-                        goto error;
+                    if(buffer->head) {
+                        Data *head = buffer->head;
+                        while (head->next) {
+                            head = head->next;
+                        }
+                        head->next = output_data;
+                    } else {
+                        buffer->head = output_data;
                     }
+                    output_data = NULL;
                 } else {
                     switch (index) {
                         case AMEDIACODEC_INFO_TRY_AGAIN_LATER:
-                            LOGW("AMediaCodec_dequeueOutputBuffer: try again later");
+                            LOGD("AMediaCodec_dequeueOutputBuffer: try again later");
                             break;
                         case AMEDIACODEC_INFO_OUTPUT_BUFFERS_CHANGED:
-                            LOGW("AMediaCodec_dequeueOutputBuffer: output buffers changed");
+                            LOGD("AMediaCodec_dequeueOutputBuffer: output buffers changed");
                             break;
                         case AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED:
-                            LOGW("AMediaCodec_dequeueOutputBuffer: output outputFormat changed");
                             format = AMediaCodec_getOutputFormat(codec);
-                            LOGD("outputFormat changed to: %s", AMediaFormat_toString(format));
+                            LOGD("AMediaCodec_dequeueOutputBuffer: outputFormat changed to %s", AMediaFormat_toString(format));
                             break;
                     }
                 }
             }
         }
-        output->size = output_cursor / sizeof(int16_t);
-        output->data = (int16_t *) output_data;
-        output_data = NULL;
         result = AMEDIA_OK;
     }
+    buffer->volume = curve(.5f);
+    buffer->is_playing = false;
+    buffer->cursor = buffer->head;
+    buffer->offset = 0;
     error:
     AMediaFormat_delete(format);
     AMediaCodec_delete(codec);
     AMediaExtractor_delete(extractor);
     AAsset_close(asset);
-    free(output_data);
+    if(output_data) {
+        if(output_data->data) {
+            free(output_data->data);
+        }
+        free(output_data);
+    }
     return AMEDIA_OK != result;
 }
 
@@ -224,15 +232,16 @@ audio_callback(AAudioStream *const audio_stream, void *const user_data, void *co
             for (int k = 0; k < 8; ++k) {
                 Buffer *buffer = &buffers[k];
                 if (buffer->is_playing) {
-                    if (buffer->data.data) {
-                        sample += buffer->data.data[buffer->cursor] * buffer->volume;
-                        if (++buffer->cursor >= buffer->data.size) {
-                            buffer->cursor = 0;
-                        }
-                    } else if (buffer->quick.data) {
-                        sample += buffer->quick.data[buffer->cursor] * buffer->volume;
-                        if (++buffer->cursor >= buffer->quick.size) {
-                            buffer->cursor = 0;
+                    if (buffer->cursor) {
+                        sample += buffer->cursor->data[buffer->offset] * buffer->volume;
+                        if (++buffer->offset >= buffer->cursor->size) {
+                            buffer->offset = 0;
+                            if (buffer->cursor->next) {
+                                buffer->cursor = buffer->cursor->next;
+                            }
+                            else {
+                                buffer->cursor = buffer->head;
+                            }
                         }
                     }
                 }
@@ -278,14 +287,15 @@ static void audio_stream_open() {
 
 static void buffer_close(Buffer *const buffer) {
     LOGD(__func__);
-    free(buffer->data.data);
-    buffer->data.data = NULL;
-    buffer->data.size = 0;
-    free(buffer->quick.data);
-    buffer->quick.data = NULL;
-    buffer->quick.size = 0;
+    Data *head = buffer->head;
+    while(head) {
+        Data *next = head->next;
+        free(head);
+        head = next;
+    }
+    buffer->head = NULL;
     buffer->volume = curve(.5f);
-    buffer->cursor = 0;
+    buffer->cursor = NULL;
     buffer->is_playing = false;
 }
 
@@ -312,8 +322,7 @@ Java_uk_golbourn_noice_AudioService_destroy(JNIEnv *env, jclass class) {
 }
 
 JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_AudioService_setNativeChannelVolume(JNIEnv *env, jclass class,
-                                                                   jint i, jfloat volume) {
+Java_uk_golbourn_noice_AudioService_setNativeChannelVolume(JNIEnv *env, jclass class, jint i, jfloat volume) {
     LOGD(__func__);
     (void) env;
     (void) class;
@@ -321,8 +330,7 @@ Java_uk_golbourn_noice_AudioService_setNativeChannelVolume(JNIEnv *env, jclass c
 }
 
 JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_AudioService_setNativeChannelPlaying(JNIEnv *env, jclass class,
-                                                                    jint i, jboolean is_playing) {
+Java_uk_golbourn_noice_AudioService_setNativeChannelPlaying(JNIEnv *env, jclass class, jint i, jboolean is_playing) {
     LOGD(__func__);
     (void) env;
     (void) class;
@@ -334,7 +342,6 @@ Java_uk_golbourn_noice_AudioService_start(JNIEnv *env, jclass class) {
     LOGD(__func__);
     (void) env;
     (void) class;
-    isStopped = false;
     aaudio_result_t result = AAudioStream_requestStart(stream);
     if (result != AAUDIO_OK) {
         LOGE("Error AAudioStream_requestStart, err %d", result);
@@ -350,12 +357,10 @@ Java_uk_golbourn_noice_AudioService_stop(JNIEnv *env, jclass class) {
     if (result != AAUDIO_OK) {
         LOGE("Error AAudioStream_requestStop, err %d", result);
     }
-    isStopped = true;
 }
 
 JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_AudioService_quickInitialise(JNIEnv *env, jclass class, jobjectArray files,
-                                                      jobject jAssetManager) {
+Java_uk_golbourn_noice_AudioService_channelInitialise(JNIEnv *env, jclass class, jint i, jstring file, jobject jAssetManager) {
     LOGD(__func__);
     (void) class;
     AAssetManager *assetManager = AAssetManager_fromJava(env, jAssetManager);
@@ -363,49 +368,14 @@ Java_uk_golbourn_noice_AudioService_quickInitialise(JNIEnv *env, jclass class, j
         LOGE("Could not obtain the AAssetManager");
         return;
     }
-    for (int i = 0; i < 8; ++i) {
-        if(!isStopped) {
-            Buffer *buffer = &buffers[i];
-            buffer->volume = curve(.5f);
-            buffer->is_playing = false;
-            buffer->cursor = 0;
-            jstring file = (jstring) (*env)->GetObjectArrayElement(env, files, i);
-            const char *filename = (*env)->GetStringUTFChars(env, file, 0);
-            bool error = buffer_initialise(assetManager, filename, &buffer->quick);
-            if (error) {
-                LOGE("Could not load %s", filename);
-            }
-            (*env)->ReleaseStringUTFChars(env, file, filename);
-            if (error) {
-                return;
-            }
-        }
+    Buffer *buffer = &buffers[i];
+    const char *filename = (*env)->GetStringUTFChars(env, file, 0);
+    bool error = buffer_initialise(assetManager, filename, buffer);
+    if (error) {
+        LOGE("Could not load %s", filename);
     }
-}
-
-JNIEXPORT void JNICALL
-Java_uk_golbourn_noice_AudioService_lazyInitialise(JNIEnv *env, jclass class, jobjectArray files,
-                                                     jobject jAssetManager) {
-    LOGD(__func__);
-    (void) class;
-    AAssetManager *assetManager = AAssetManager_fromJava(env, jAssetManager);
-    if (assetManager == NULL) {
-        LOGE("Could not obtain the AAssetManager");
+    (*env)->ReleaseStringUTFChars(env, file, filename);
+    if (error) {
         return;
-    }
-    for (int i = 0; i < 8; ++i) {
-        if(!isStopped) {
-            Buffer *buffer = &buffers[i];
-            jstring file = (jstring) (*env)->GetObjectArrayElement(env, files, i);
-            const char *filename = (*env)->GetStringUTFChars(env, file, 0);
-            bool error = buffer_initialise(assetManager, filename, &buffer->data);
-            if (error) {
-                LOGE("Could not load %s", filename);
-            }
-            (*env)->ReleaseStringUTFChars(env, file, filename);
-            if (error) {
-                return;
-            }
-        }
     }
 }

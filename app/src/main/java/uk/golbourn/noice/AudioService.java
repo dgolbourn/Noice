@@ -12,22 +12,17 @@ import android.content.IntentFilter;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.IBinder;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
-
-import java.util.Arrays;
 
 public class AudioService extends Service {
 
     static {
         System.loadLibrary("native-lib");
     }
-    private static native void lazyInitialise(String[] files, AssetManager assetManager);
-
-    private static native void quickInitialise(String[] files, AssetManager assetManager);
+    private static native void channelInitialise(int i, String file, AssetManager assetManager);
 
     private static native void initialise();
 
@@ -45,11 +40,10 @@ public class AudioService extends Service {
 
     private final BroadcastReceiver receiver = new AudioServiceBroadcastReceiver();
 
-    private Thread lazyInitialiserThread = null;
+    private final Thread[] channelInitialiserThreads = new Thread[8];
 
     public AudioService() {
     }
-
 
     public void toggleChannel(int i, boolean isPlaying) {
         setNativeChannelPlaying(i, isPlaying);
@@ -77,20 +71,25 @@ public class AudioService extends Service {
         filter.addAction("uk.golbourn.Intent.Action.Resume");
         registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED);
 
-        lazyInitialiserThread = new Thread(() -> lazyInitialise(Arrays.stream(CardConfig.cardConfigs).map(CardConfig::getFileName).toArray(String[]::new), getAssets()));
-        lazyInitialiserThread.start();
-        quickInitialise(Arrays.stream(CardConfig.cardConfigs).map(CardConfig::getQuickFileName).toArray(String[]::new), getAssets());
+        for(CardConfig cardConfig : CardConfig.cardConfigs) {
+            channelInitialiserThreads[cardConfig.audioChannel()] = new Thread(() -> channelInitialise(cardConfig.audioChannel(), cardConfig.fileName(), getAssets()));
+        }
+        for(Thread channelInitialiserThread : channelInitialiserThreads) {
+            channelInitialiserThread.start();
+        }
     }
 
     @Override
     public void onDestroy() {
+        unregisterReceiver(receiver);
         try {
-            if (null != lazyInitialiserThread) {
-                lazyInitialiserThread.join();
-                lazyInitialiserThread = null;
+            for(Thread channelInitialiserThread : channelInitialiserThreads) {
+                if (null != channelInitialiserThread) {
+                    channelInitialiserThread.join();
+                }
             }
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            System.out.println(e.toString());
         }
         stop();
         destroy();

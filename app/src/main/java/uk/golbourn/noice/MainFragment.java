@@ -73,23 +73,23 @@ public class MainFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_main, container, false);
         for (final CardConfig cardConfig : CardConfig.cardConfigs) {
-            final MaterialCardView materialCardView = view.findViewById(cardConfig.getCardId());
-            final Slider slider = view.findViewById(cardConfig.getSliderId());
+            final MaterialCardView materialCardView = view.findViewById(cardConfig.cardId());
+            final Slider slider = view.findViewById(cardConfig.sliderId());
             materialCardView.setChecked(true);
             slider.setVisibility(View.INVISIBLE);
             materialCardView.setOnClickListener(v -> {
                 if (materialCardView.isChecked()) {
                     materialCardView.setChecked(false);
                     slider.setVisibility(View.VISIBLE);
-                    audioService.toggleChannel(cardConfig.getAudioChannel(), true);
+                    audioService.toggleChannel(cardConfig.audioChannel(), true);
                 } else {
                     materialCardView.setChecked(true);
                     slider.setVisibility(View.INVISIBLE);
-                    audioService.toggleChannel(cardConfig.getAudioChannel(), false);
+                    audioService.toggleChannel(cardConfig.audioChannel(), false);
                 }
             });
             slider.addOnChangeListener((_s, v, _u) -> {
-                audioService.setChannelVolume(cardConfig.getAudioChannel(), v);
+                audioService.setChannelVolume(cardConfig.audioChannel(), v);
             });
         }
         return view;
