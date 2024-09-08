@@ -182,6 +182,10 @@ buffer_initialise(AAssetManager *const assetManager, const char *filename, Buffe
                         head->next = output_data;
                     } else {
                         buffer->head = output_data;
+                        buffer->volume = curve(.5f);
+                        buffer->is_playing = false;
+                        buffer->cursor = buffer->head;
+                        buffer->offset = 0;
                     }
                     output_data = NULL;
                 } else {
@@ -202,10 +206,6 @@ buffer_initialise(AAssetManager *const assetManager, const char *filename, Buffe
         }
         result = AMEDIA_OK;
     }
-    buffer->volume = curve(.5f);
-    buffer->is_playing = false;
-    buffer->cursor = buffer->head;
-    buffer->offset = 0;
     error:
     AMediaFormat_delete(format);
     AMediaCodec_delete(codec);
