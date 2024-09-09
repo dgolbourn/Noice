@@ -118,7 +118,7 @@ public class AudioService extends Service {
                 PendingIntent pendingResumeIntent = PendingIntent.getBroadcast(getApplicationContext(), 45, resumeIntent, PendingIntent.FLAG_IMMUTABLE);
 
                 Notification notification = new NotificationCompat.Builder(this, "Noice")
-                        .setSmallIcon(R.drawable.notification)
+                        .setSmallIcon(R.drawable.ic_launcher_foreground)
                         .setContentIntent(pendingContentIntent)
                         .addAction(R.drawable.pause, "Pause", pendingPauseIntent)
                         .addAction(R.drawable.play, "Resume", pendingResumeIntent)
