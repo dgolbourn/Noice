@@ -17,6 +17,7 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
           cache: 'gradle'
+      - uses: nttld/setup-ndk@v1
       - name: Change wrapper permissions
         run: chmod +x ./gradlew
       - name: Run gradle tests
