@@ -19,7 +19,7 @@ import androidx.core.app.ServiceCompat;
 
 public class AudioService extends Service {
 
-    public static final int NOTIFICATION_ID = 42;
+    private static final int NOTIFICATION_ID = 42;
 
     static {
         System.loadLibrary("native-lib");
