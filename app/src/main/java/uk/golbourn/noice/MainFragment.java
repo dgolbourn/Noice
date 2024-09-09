@@ -76,6 +76,7 @@ public class MainFragment extends Fragment {
             final MaterialCardView materialCardView = view.findViewById(cardConfig.cardId());
             final Slider slider = view.findViewById(cardConfig.sliderId());
             materialCardView.setChecked(true);
+            materialCardView.setCheckedIconSize(0);
             slider.setVisibility(View.INVISIBLE);
             materialCardView.setOnClickListener(v -> {
                 if (materialCardView.isChecked()) {

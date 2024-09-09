@@ -29,8 +29,8 @@ typedef struct {
     _Atomic (Data *) head;
     _Atomic float volume;
     _Atomic bool is_playing;
-    Data *cursor;
-    size_t offset;
+    _Atomic (Data *) cursor;
+    _Atomic size_t offset;
 } Buffer;
 
 static float curve(float volume) {

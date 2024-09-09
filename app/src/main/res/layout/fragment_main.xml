@@ -10,6 +10,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="#413B4A"
         android:orientation="vertical">
 
         <LinearLayout
@@ -19,7 +20,6 @@
             android:orientation="horizontal">
 
             <com.google.android.material.card.MaterialCardView
-                android:soundEffectsEnabled="false"
                 android:id="@+id/card_1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -28,19 +28,21 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/mute">
+                android:soundEffectsEnabled="false"
+                >
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="#FFC107"
                     android:orientation="vertical">
 
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:layout_margin="20dp"
-                        android:contentDescription="brook"
-                        app:srcCompat="@drawable/brook" />
+                        android:contentDescription="calm"
+                        app:srcCompat="@drawable/calm" />
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_1"
@@ -49,14 +51,19 @@
                         android:contentDescription="@string/slider_desc"
                         android:value="0.5"
                         android:valueFrom="0.0"
-                        android:valueTo="1.0" />
+                        android:valueTo="1.0"
+                        app:haloColor="@color/noice.black"
+                        app:thumbColor="@color/noice.black"
+                        app:tickColorActive="@color/noice.black"
+                        app:tickColorInactive="@color/noice.black"
+                        app:trackColorActive="@color/noice.black"
+                        app:trackColorInactive="@color/noice.black" />
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
-                android:soundEffectsEnabled="false"
                 android:id="@+id/card_2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -65,19 +72,21 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/mute">
+                android:soundEffectsEnabled="false"
+                >
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
+                    android:background="#4CAF50"
                     android:orientation="vertical">
 
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:layout_margin="20dp"
-                        android:contentDescription="woods"
-                        app:srcCompat="@drawable/birds" />
+                        android:contentDescription="forest"
+                        app:srcCompat="@drawable/forest" />
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_2"
@@ -86,7 +95,13 @@
                         android:contentDescription="@string/slider_desc"
                         android:value="0.5"
                         android:valueFrom="0.0"
-                        android:valueTo="1.0" />
+                        android:valueTo="1.0"
+                        app:haloColor="@color/noice.black"
+                        app:thumbColor="@color/noice.black"
+                        app:tickColorActive="@color/noice.black"
+                        app:tickColorInactive="@color/noice.black"
+                        app:trackColorActive="@color/noice.black"
+                        app:trackColorInactive="@color/noice.black" />
 
                 </LinearLayout>
 
@@ -100,7 +115,6 @@
             android:orientation="horizontal">
 
             <com.google.android.material.card.MaterialCardView
-                android:soundEffectsEnabled="false"
                 android:id="@+id/card_3"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -109,19 +123,21 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/mute">
+                android:soundEffectsEnabled="false"
+                >
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="#4A605E"
                     android:orientation="vertical">
 
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:layout_margin="20dp"
-                        android:contentDescription="city"
-                        app:srcCompat="@drawable/city" />
+                        android:contentDescription="train"
+                        app:srcCompat="@drawable/train" />
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_3"
@@ -130,14 +146,19 @@
                         android:contentDescription="@string/slider_desc"
                         android:value="0.5"
                         android:valueFrom="0.0"
-                        android:valueTo="1.0" />
+                        android:valueTo="1.0"
+                        app:haloColor="@color/noice.black"
+                        app:thumbColor="@color/noice.black"
+                        app:tickColorActive="@color/noice.black"
+                        app:tickColorInactive="@color/noice.black"
+                        app:trackColorActive="@color/noice.black"
+                        app:trackColorInactive="@color/noice.black" />
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
-                android:soundEffectsEnabled="false"
                 android:id="@+id/card_4"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -146,11 +167,13 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/mute">
+                android:soundEffectsEnabled="false"
+                >
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="#89C4CC"
                     android:orientation="vertical">
 
                     <ImageView
@@ -167,7 +190,13 @@
                         android:contentDescription="@string/slider_desc"
                         android:value="0.5"
                         android:valueFrom="0.0"
-                        android:valueTo="1.0" />
+                        android:valueTo="1.0"
+                        app:haloColor="@color/noice.black"
+                        app:thumbColor="@color/noice.black"
+                        app:tickColorActive="@color/noice.black"
+                        app:tickColorInactive="@color/noice.black"
+                        app:trackColorActive="@color/noice.black"
+                        app:trackColorInactive="@color/noice.black" />
 
                 </LinearLayout>
 
@@ -190,11 +219,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:soundEffectsEnabled="false"
-                app:checkedIcon="@drawable/mute">
+                >
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
+                    android:background="#3F51B5"
                     android:orientation="vertical">
 
 
@@ -212,14 +242,19 @@
                         android:contentDescription="@string/slider_desc"
                         android:value="0.5"
                         android:valueFrom="0.0"
-                        android:valueTo="1.0" />
+                        android:valueTo="1.0"
+                        app:haloColor="@color/noice.black"
+                        app:thumbColor="@color/noice.black"
+                        app:tickColorActive="@color/noice.black"
+                        app:tickColorInactive="@color/noice.black"
+                        app:trackColorActive="@color/noice.black"
+                        app:trackColorInactive="@color/noice.black" />
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
-                android:soundEffectsEnabled="false"
                 android:id="@+id/card_6"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -228,19 +263,21 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/mute">
+                android:soundEffectsEnabled="false"
+                >
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="#8F3114"
                     android:orientation="vertical">
 
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:layout_margin="20dp"
-                        android:contentDescription="radio"
-                        app:srcCompat="@drawable/radio" />
+                        android:contentDescription="fireplace"
+                        app:srcCompat="@drawable/fire" />
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_6"
@@ -249,7 +286,13 @@
                         android:contentDescription="@string/slider_desc"
                         android:value="0.5"
                         android:valueFrom="0.0"
-                        android:valueTo="1.0" />
+                        android:valueTo="1.0"
+                        app:haloColor="@color/noice.black"
+                        app:thumbColor="@color/noice.black"
+                        app:tickColorActive="@color/noice.black"
+                        app:tickColorInactive="@color/noice.black"
+                        app:trackColorActive="@color/noice.black"
+                        app:trackColorInactive="@color/noice.black" />
 
                 </LinearLayout>
 
@@ -263,7 +306,6 @@
             android:orientation="horizontal">
 
             <com.google.android.material.card.MaterialCardView
-                android:soundEffectsEnabled="false"
                 android:id="@+id/card_7"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -272,19 +314,21 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/mute">
+                android:soundEffectsEnabled="false"
+                >
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="#75654E"
                     android:orientation="vertical">
 
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:layout_margin="20dp"
-                        android:contentDescription="fan"
-                        app:srcCompat="@drawable/fan" />
+                        android:contentDescription="car"
+                        app:srcCompat="@drawable/car" />
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_7"
@@ -293,14 +337,19 @@
                         android:contentDescription="@string/slider_desc"
                         android:value="0.5"
                         android:valueFrom="0.0"
-                        android:valueTo="1.0" />
+                        android:valueTo="1.0"
+                        app:haloColor="@color/noice.black"
+                        app:thumbColor="@color/noice.black"
+                        app:tickColorActive="@color/noice.black"
+                        app:tickColorInactive="@color/noice.black"
+                        app:trackColorActive="@color/noice.black"
+                        app:trackColorInactive="@color/noice.black" />
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
-                android:soundEffectsEnabled="false"
                 android:id="@+id/card_8"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -309,19 +358,21 @@
                 android:checkable="true"
                 android:clickable="true"
                 android:focusable="true"
-                app:checkedIcon="@drawable/mute">
+                android:soundEffectsEnabled="false"
+                >
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="#9F9F9F"
                     android:orientation="vertical">
 
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:layout_margin="20dp"
-                        android:contentDescription="people"
-                        app:srcCompat="@drawable/people" />
+                        android:contentDescription="wind"
+                        app:srcCompat="@drawable/wind" />
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_8"
@@ -330,7 +381,13 @@
                         android:contentDescription="@string/slider_desc"
                         android:value="0.5"
                         android:valueFrom="0.0"
-                        android:valueTo="1.0" />
+                        android:valueTo="1.0"
+                        app:haloColor="@color/noice.black"
+                        app:thumbColor="@color/noice.black"
+                        app:tickColorActive="@color/noice.black"
+                        app:tickColorInactive="@color/noice.black"
+                        app:trackColorActive="@color/noice.black"
+                        app:trackColorInactive="@color/noice.black" />
 
                 </LinearLayout>
 

@@ -126,7 +126,7 @@ public class AudioService extends Service {
                         .setOngoing(true)
                         .build();
                 ServiceCompat.startForeground(this, 42, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
-            return START_STICKY;
+                return START_STICKY;
             case "uk.golbourn.Intent.Action.Stop":
                 ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
                 stopSelf();
