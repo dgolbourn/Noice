@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.4.1)
 project(Noice)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
 add_library(native-lib SHARED native-lib.c)
 find_library(AAudio-lib AAudio REQUIRED)
 find_library(android-lib android REQUIRED)
