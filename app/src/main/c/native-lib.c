@@ -385,7 +385,7 @@ Java_uk_golbourn_noice_AudioService_state(JNIEnv *env, jclass class) {
     LOGD(__func__);
     (void) env;
     (void) class;
-    int count = 0;
+    jint count = 0;
     for (int k = 0; k < 8; ++k) {
         Buffer *buffer = &buffers[k];
         if (buffer->is_playing) {
@@ -397,6 +397,7 @@ Java_uk_golbourn_noice_AudioService_state(JNIEnv *env, jclass class) {
         }
     }
     switch(AAudioStream_getState(stream)) {
+        case AAUDIO_STREAM_STATE_STARTING:
         case AAUDIO_STREAM_STATE_STARTED:
             return count;
         default:
